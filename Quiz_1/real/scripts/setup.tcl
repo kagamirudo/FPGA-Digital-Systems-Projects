@@ -84,7 +84,7 @@ catch { export_ip_user_files -of_objects [get_ips $ip_name] -no_script -force -q
 #-------------------------------------------------------------------------------
 # 2. Add RTL + TB sources if not already present
 #-------------------------------------------------------------------------------
-set rtl_files [list [file normalize user_logic.vhd]]
+set rtl_files [list [file normalize rtl/user_logic.vhd]]
 set tb_files  [list [file normalize tb/tb_user_logic.vhd]]
 
 foreach f $rtl_files {
