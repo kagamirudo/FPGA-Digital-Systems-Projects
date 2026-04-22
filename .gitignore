@@ -1,0 +1,78 @@
+# ==============================================================
+# Vivado / Vitis / Xilinx generated artifacts
+# ==============================================================
+
+# Vivado project logs / journals / archives
+*.log
+*.jou
+*.str
+*.pb
+*.wdb
+*.wcfg.bak
+*.backup.*
+
+# Vivado project files (keep scripts/setup.tcl instead)
+*.xpr
+*.xsa
+*.xclbin
+*.bit
+*.bin
+*.hex
+*.ltx
+*.mmi
+*.rpt
+*.dcp
+
+# Generated / cache / runs / hw handoff directories
+**/.Xil/
+**/.cache/
+**/.hw/
+**/.sim/
+**/.srcs/sources_1/bd/*/ip/
+**/*.cache/
+**/*.hw/
+**/*.ip_user_files/
+**/*.runs/
+**/*.sim/
+**/*.gen/
+**/*.hbs/
+**/*.Xil/
+
+# Simulation products
+**/xsim.dir/
+**/xvlog.pb
+**/xelab.pb
+**/xsim.pb
+**/webtalk*.log
+**/webtalk*.jou
+
+# Vitis / SDK / workspace (build outputs)
+**/workspace/*/Debug/
+**/workspace/*/Release/
+**/workspace/*/_ide/
+**/workspace/*/.metadata/
+**/workspace/*/.settings/
+**/workspace/*/.project
+**/workspace/*/.cproject
+**/workspace/platform/
+**/workspace/*_system/
+**/workspace/*.prj
+**/*.elf
+**/*.map
+
+# Vivado archives / temp zips
+**/vivado_pid*.zip
+**/vivado_pid*.str
+**/hs_err_pid*.log
+
+# Misc patterns
+*.coe
+*.svf
+*.svf.gz
+*.txt
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
