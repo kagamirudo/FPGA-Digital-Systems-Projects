@@ -5,18 +5,19 @@
    <db_ref_list>
       <db_ref path="tb_fix_acc_core_behav.wdb" id="1">
          <top_modules>
+            <top_module name="glbl" />
             <top_module name="tb_fix_acc_core" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="459.011 ns"></ZoomEndTime>
-      <Cursor1Time time="187.167 ns"></Cursor1Time>
+      <ZoomStartTime time="137.920 ns"></ZoomStartTime>
+      <ZoomEndTime time="270.621 ns"></ZoomEndTime>
+      <Cursor1Time time="150.920 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="88"></NameColumnWidth>
-      <ValueColumnWidth column_width="118"></ValueColumnWidth>
+      <ValueColumnWidth column_width="114"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="6" />
    <wvobject type="logic" fp_name="/tb_fix_acc_core/clk">
@@ -30,10 +31,12 @@
    <wvobject type="array" fp_name="/tb_fix_acc_core/b">
       <obj_property name="ElementShortName">b[31:0]</obj_property>
       <obj_property name="ObjectShortName">b[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tb_fix_acc_core/q">
       <obj_property name="ElementShortName">q[31:0]</obj_property>
       <obj_property name="ObjectShortName">q[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="other" fp_name="/tb_fix_acc_core/errors">
       <obj_property name="ElementShortName">errors</obj_property>
