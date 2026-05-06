@@ -11,14 +11,13 @@
  *
  * Behavior:
  *   - Poll the buttons every POLL_PERIOD_US.
- *   - On a rising edge of BTN0 or BTN1, drive the KMP FSM that matches
- *     the sequence btn0, btn0, btn1.
- *   - On detection, toggle the green LED of LD0 (rgb_leds_tri_o[1]).
- *   - Print every press, every state transition, and every detection
- *     over UART so the PuTTY/serial-monitor capture is self-explanatory.
+ *   - On a rising edge of BTN0 or BTN1, drive the 4-state KMP FSM that
+ *     matches the sequence btn0, btn0, btn1.
+ *   - The detection LED (LD0_G, rgb_leds_tri_o[1]) is ON while, and only
+ *     while, the FSM is in the "detected" state S3.
+ *   - Print every press and every state transition over UART so the
+ *     PuTTY/serial-monitor capture is self-explanatory.
  */
-
-#include <unistd.h>
 
 #include "xparameters.h"
 #include "xgpio.h"
@@ -65,9 +64,10 @@
 
 /* FSM states for pattern btn0, btn0, btn1 ----------------------------- */
 typedef enum {
-    S0 = 0,   /* nothing matched yet                      */
-    S1 = 1,   /* btn0 matched                             */
-    S2 = 2    /* btn0, btn0 matched                       */
+    S0 = 0,   /* nothing matched yet                                   */
+    S1 = 1,   /* btn0 matched                                          */
+    S2 = 2,   /* btn0, btn0 matched                                    */
+    S3 = 3    /* btn0, btn0, btn1 matched - LED ON                     */
 } seq_state_t;
 
 static const char *state_name(seq_state_t s)
@@ -76,36 +76,40 @@ static const char *state_name(seq_state_t s)
     case S0: return "S0";
     case S1: return "S1";
     case S2: return "S2";
+    case S3: return "S3";
     default: return "??";
     }
 }
 
 /* --------------------------------------------------------------------------
- * KMP transition table:
+ * 4-state KMP transition table (Moore-style; LED is purely a function of
+ * the current state):
  *
  *   S0 + btn0 -> S1
  *   S0 + btn1 -> S0
  *   S1 + btn0 -> S2
  *   S1 + btn1 -> S0
- *   S2 + btn0 -> S2  (KMP self-loop: new candidate prefix)
- *   S2 + btn1 -> S0  + DETECT
+ *   S2 + btn0 -> S2   (KMP self-loop: trailing btn0 starts a new match)
+ *   S2 + btn1 -> S3   (DETECTED)
+ *   S3 + btn0 -> S1   (KMP-aware: this btn0 could open the next match)
+ *   S3 + btn1 -> S0
  * --------------------------------------------------------------------------
  */
-static seq_state_t fsm_step(seq_state_t s, int btn_idx, int *detect_out)
+static seq_state_t fsm_step(seq_state_t s, int btn_idx)
 {
-    *detect_out = 0;
-
     if (btn_idx == 0) {                 /* BTN0 event */
         switch (s) {
         case S0: return S1;
         case S1: return S2;
         case S2: return S2;
+        case S3: return S1;
         }
     } else {                            /* BTN1 event */
         switch (s) {
         case S0: return S0;
         case S1: return S0;
-        case S2: *detect_out = 1; return S0;
+        case S2: return S3;
+        case S3: return S0;
         }
     }
     return S0;
@@ -128,8 +132,7 @@ int main(void)
     XGpio_SetDataDirection(&led_gpio, GPIO_CHANNEL, 0x00);     /* all out */
     XGpio_SetDataDirection(&btn_gpio, GPIO_CHANNEL, 0xFFFFFFFF); /* all in */
 
-    u32 led_state = 0;
-    XGpio_DiscreteWrite(&led_gpio, GPIO_CHANNEL, led_state);
+    XGpio_DiscreteWrite(&led_gpio, GPIO_CHANNEL, 0);
 
     /* Startup window so the serial monitor has time to attach, and so
      * UART output is confirmed working before any GPIO interaction. */
@@ -141,12 +144,12 @@ int main(void)
     xil_printf("\r\n");
     xil_printf("==========================================================\r\n");
     xil_printf("   ECEC 661 Midterm - Button sequence detector\r\n");
-    xil_printf("   Pattern  : BTN0, BTN0, BTN1   (KMP, toggle on match)\r\n");
+    xil_printf("   Pattern  : BTN0, BTN0, BTN1   (4-state Moore FSM)\r\n");
     xil_printf("   LEDs base: 0x%08x   Buttons base: 0x%08x\r\n",
                (unsigned) LEDS_BASEADDR, (unsigned) BTNS_BASEADDR);
     xil_printf("==========================================================\r\n");
     xil_printf("Press BTN0 / BTN1 on the Cora Z7-07S board.\r\n");
-    xil_printf("LD0_G toggles every time the pattern is matched.\r\n\r\n");
+    xil_printf("LD0_G is ON while the FSM is in the detected state S3.\r\n\r\n");
 
     seq_state_t state = S0;
     u32 prev_btns = XGpio_DiscreteRead(&btn_gpio, GPIO_CHANNEL) & 0x3U;
@@ -177,22 +180,25 @@ int main(void)
 
         if (btn_idx >= 0) {
             seq_state_t prev = state;
-            int detected = 0;
-            state = fsm_step(state, btn_idx, &detected);
+            state = fsm_step(state, btn_idx);
 
-            xil_printf("[press BTN%d] state %s -> %s",
-                       btn_idx, state_name(prev), state_name(state));
+            /* Moore output: LED is ON iff state == S3. Drive it on every
+             * transition so leaving S3 turns it back off automatically. */
+            u32 led_state = ((state == S3) ? LED_DETECT_BIT : 0U) & LED_MASK;
+            XGpio_DiscreteWrite(&led_gpio, GPIO_CHANNEL, led_state);
 
-            if (detected) {
-                led_state ^= LED_DETECT_BIT;
-                led_state &= LED_MASK;
-                XGpio_DiscreteWrite(&led_gpio, GPIO_CHANNEL, led_state);
-                detect_count++;
-                xil_printf("  *** DETECTED #%u  LED=%s ***",
-                           detect_count,
-                           (led_state & LED_DETECT_BIT) ? "ON " : "OFF");
+            int just_detected = (state == S3 && prev != S3);
+            if (just_detected) detect_count++;
+
+            if (just_detected) {
+                xil_printf("[press BTN%d] state %s -> %s  LED=ON   *** DETECTED #%u ***\r\n",
+                           btn_idx, state_name(prev), state_name(state),
+                           detect_count);
+            } else {
+                xil_printf("[press BTN%d] state %s -> %s  LED=%s\r\n",
+                           btn_idx, state_name(prev), state_name(state),
+                           (state == S3) ? "ON " : "OFF");
             }
-            xil_printf("\r\n");
         }
 
         usleep(POLL_PERIOD_US);

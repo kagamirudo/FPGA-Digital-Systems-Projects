@@ -3,9 +3,9 @@
 Zynq PS + PL implementation on the Digilent Cora Z7-07S. Two AXI GPIO
 slaves connect the PS to the on-board buttons (BTN0/BTN1) and to the
 RGB LEDs. A bare-metal C application running on the PS detects the
-press sequence **BTN0, BTN0, BTN1** with KMP-style transitions, toggles
-the green segment of LD0 on every match, and prints a trace over UART0
-(FT2232HQ USB-UART bridge).
+press sequence **BTN0, BTN0, BTN1** with a 4-state KMP-style Moore FSM,
+turns the green segment of LD0 on while the FSM is in the detected
+state `S3`, and prints a trace over UART0 (FT2232HQ USB-UART bridge).
 
 ## Layout
 
@@ -226,31 +226,36 @@ seq_det starting in 1...
 
 ==========================================================
    ECEC 661 Midterm - Button sequence detector
-   Pattern  : BTN0, BTN0, BTN1   (KMP, toggle on match)
+   Pattern  : BTN0, BTN0, BTN1   (4-state Moore FSM)
    LEDs base: 0x41200000   Buttons base: 0x41210000
 ==========================================================
 Press BTN0 / BTN1 on the Cora Z7-07S board.
-LD0_G toggles every time the pattern is matched.
+LD0_G is ON while the FSM is in the detected state S3.
 
-[press BTN0] state S0 -> S1
-[press BTN0] state S1 -> S2
-[press BTN1] state S2 -> S0  *** DETECTED #1  LED=ON  ***
+[press BTN0] state S0 -> S1  LED=OFF
+[press BTN0] state S1 -> S2  LED=OFF
+[press BTN1] state S2 -> S3  LED=ON   *** DETECTED #1 ***
+```
+
+Press BTN0 again -> the FSM leaves S3 and the LED turns back off, but
+that BTN0 already opens the next match attempt:
+
+```
+[press BTN0] state S3 -> S1  LED=OFF
 ```
 
 KMP path - BTN0, BTN0, BTN0, BTN1 (still detects on the trailing BTN1):
 
 ```
-[press BTN0] state S0 -> S1
-[press BTN0] state S1 -> S2
-[press BTN0] state S2 -> S2
-[press BTN1] state S2 -> S0  *** DETECTED #2  LED=OFF ***
+[press BTN0] state S0 -> S1  LED=OFF
+[press BTN0] state S1 -> S2  LED=OFF
+[press BTN0] state S2 -> S2  LED=OFF
+[press BTN1] state S2 -> S3  LED=ON   *** DETECTED #2 ***
 ```
 
 False start - BTN0, BTN1 (resets, no detection):
 
 ```
-[press BTN0] state S0 -> S1
-[press BTN1] state S1 -> S0
+[press BTN0] state S0 -> S1  LED=OFF
+[press BTN1] state S1 -> S0  LED=OFF
 ```
-
-A second match toggles `LD0_G` back off, a third toggles it on, etc.
