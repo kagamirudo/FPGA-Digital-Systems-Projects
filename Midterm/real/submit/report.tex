@@ -1,0 +1,301 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[letterpaper,top=0.5in,bottom=0.5in,left=0.55in,right=0.55in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{titlesec}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+}
+
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{2pt}
+\captionsetup{skip=2pt,font=small}
+
+% -----------------------------------------------------------------------------
+% Code listing style (C)
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecmt}{RGB}{0,120,0}
+\definecolor{codestr}{RGB}{170,55,20}
+\definecolor{codenum}{RGB}{120,120,120}
+
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecmt}\itshape,
+    stringstyle=\color{codestr},
+    numbers=left,
+    numberstyle=\tiny\color{codenum},
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=4,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=false,
+    breakindent=0pt,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    captionpos=b,
+    aboveskip=4pt,
+    belowskip=4pt,
+    xleftmargin=6pt,
+    xrightmargin=2pt,
+    columns=fullflexible,
+    keepspaces=true,
+    morekeywords={u32,u64,XGpio,seq_state_t}
+}
+
+\title{\vspace{-0.6in}\textbf{ECEC 661 -- Midterm Submission}\\
+       \large Button Sequence Detector (BTN0, BTN0, BTN1) on Cora Z7-07S}
+\author{Gary Pham \texttt{(gp492)}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-0.25in}
+
+% =============================================================================
+\section{Problem Statement}
+% =============================================================================
+
+Build a Zynq PS+PL system on the Digilent Cora Z7-07S that detects the
+button-press sequence \textbf{BTN0, BTN0, BTN1}. A bare-metal C
+application running on the PS reads the buttons and lights an on-board
+LED to indicate detection. Two AXI GPIO slaves bridge the PS to the
+buttons (input) and to the RGB LEDs (output); no custom IP is required.
+
+% =============================================================================
+\section{Block Design}
+% =============================================================================
+
+The block design (Figure~\ref{fig:bd}) instantiates the
+\texttt{ZYNQ7 Processing System} (UART0 on MIO 14/15 for the
+FT2232HQ USB-UART), a \texttt{Processor System Reset}, an
+\texttt{AXI Interconnect} (1 slave, 2 masters), and two
+\texttt{AXI GPIO} slaves: \texttt{axi\_gpio\_0} drives the 6-bit RGB
+LED vector \texttt{rgb\_leds\_tri\_o[5:0]}, \texttt{axi\_gpio\_1}
+samples the 2-bit button vector \texttt{btns\_2bits\_tri\_i[1:0]}.
+The PS clock (\texttt{FCLK\_CLK0}, 100\,MHz) and reset
+(\texttt{peripheral\_aresetn}) feed every AXI port. Address map:
+\texttt{axi\_gpio\_0 = 0x4120\_0000}, \texttt{axi\_gpio\_1 = 0x4121\_0000}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{diagram.png}
+    \caption{Vivado block diagram \texttt{seq\_det.bd}: Zynq PS, AXI
+             Interconnect, and the two AXI GPIO peripherals exposed
+             externally as \texttt{rgb\_leds} and \texttt{btns\_2bits}.}
+    \label{fig:bd}
+\end{figure}
+
+% =============================================================================
+\section{Detection FSM}
+% =============================================================================
+
+The detector is a 4-state Moore-style machine implemented in software.
+The detection LED (\texttt{LD0\_G} = \texttt{rgb\_leds\_tri\_o[1]}) is
+driven directly from the current state -- it is ON if and only if
+\texttt{state == S3}. KMP-style transitions ensure that a redundant
+\texttt{BTN0} does not throw away the prefix already matched.
+
+\begin{table}[H]
+    \centering
+    \caption{Transition table for pattern \texttt{BTN0, BTN0, BTN1}.}
+    \label{tab:fsm}
+    \small
+    \begin{tabular}{cccl}
+        \toprule
+        \textbf{State} & \textbf{Event} & \textbf{Next} & \textbf{Note} \\
+        \midrule
+        S0 & BTN0 & S1 & start of pattern                                  \\
+        S0 & BTN1 & S0 & ignore                                             \\
+        S1 & BTN0 & S2 & two-in-a-row                                       \\
+        S1 & BTN1 & S0 & reset                                              \\
+        S2 & BTN0 & S2 & KMP self-loop (extra BTN0 is a new candidate)      \\
+        S2 & BTN1 & S3 & \textbf{detected} -- LED ON                        \\
+        S3 & BTN0 & S1 & leave detect; this BTN0 may open the next match    \\
+        S3 & BTN1 & S0 & leave detect; reset                                \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Software (\texttt{main.c})}
+% =============================================================================
+
+The PS application uses the \texttt{XGpio} driver, polls the buttons
+every 5\,ms with rising-edge detection, advances the FSM, drives the
+LED from the resulting state, and prints every transition over UART
+for grading evidence.
+
+\begin{lstlisting}[caption={\texttt{Midterm/real/sw/main.c}},label={lst:main}]
+#include "xparameters.h"
+#include "xgpio.h"
+#include "xil_printf.h"
+#include "xil_types.h"
+#include "sleep.h"
+
+#ifdef XPAR_AXI_GPIO_0_BASEADDR
+#define LEDS_BASEADDR   XPAR_AXI_GPIO_0_BASEADDR
+#else
+#define LEDS_BASEADDR   0x41200000U
+#endif
+#ifdef XPAR_AXI_GPIO_1_BASEADDR
+#define BTNS_BASEADDR   XPAR_AXI_GPIO_1_BASEADDR
+#else
+#define BTNS_BASEADDR   0x41210000U
+#endif
+
+#define GPIO_CHANNEL    1U
+#define LED_MASK        0x3FU
+#define LED_DETECT_BIT  (1U << 1)   /* LD0_G */
+#define BTN0_MASK       (1U << 0)
+#define BTN1_MASK       (1U << 1)
+#define POLL_PERIOD_US  5000U
+
+typedef enum { S0 = 0, S1 = 1, S2 = 2, S3 = 3 } seq_state_t;
+
+static const char *state_name(seq_state_t s) {
+    switch (s) { case S0: return "S0"; case S1: return "S1";
+                 case S2: return "S2"; case S3: return "S3";
+                 default: return "??"; }
+}
+
+/* 4-state KMP transition table (S3 = detected, LED ON) */
+static seq_state_t fsm_step(seq_state_t s, int btn_idx) {
+    if (btn_idx == 0) {
+        switch (s) { case S0: return S1; case S1: return S2;
+                     case S2: return S2; case S3: return S1; }
+    } else {
+        switch (s) { case S0: return S0; case S1: return S0;
+                     case S2: return S3; case S3: return S0; }
+    }
+    return S0;
+}
+
+int main(void) {
+    XGpio led_gpio, btn_gpio;
+    if (XGpio_Initialize(&led_gpio, LEDS_BASEADDR) != XST_SUCCESS) return XST_FAILURE;
+    if (XGpio_Initialize(&btn_gpio, BTNS_BASEADDR) != XST_SUCCESS) return XST_FAILURE;
+    XGpio_SetDataDirection(&led_gpio, GPIO_CHANNEL, 0x00);        /* outputs */
+    XGpio_SetDataDirection(&btn_gpio, GPIO_CHANNEL, 0xFFFFFFFF);  /* inputs  */
+    XGpio_DiscreteWrite(&led_gpio, GPIO_CHANNEL, 0);
+
+    for (int i = 3; i > 0; i--) {
+        xil_printf("seq_det starting in %d...\r\n", i); sleep(1);
+    }
+    xil_printf("\r\n=== ECEC 661 Midterm: pattern BTN0,BTN0,BTN1 (4-state FSM) ===\r\n");
+
+    seq_state_t state = S0;
+    u32 prev_btns = XGpio_DiscreteRead(&btn_gpio, GPIO_CHANNEL) & 0x3U;
+    unsigned detect_count = 0;
+
+    while (1) {
+        u32 cur_btns = XGpio_DiscreteRead(&btn_gpio, GPIO_CHANNEL) & 0x3U;
+        if (cur_btns == 0x3U) {                 /* both held: ambiguous, skip */
+            usleep(POLL_PERIOD_US); prev_btns = cur_btns; continue;
+        }
+        u32 rising = cur_btns & ~prev_btns;     /* 0 -> 1 edges only */
+        prev_btns = cur_btns;
+
+        int btn_idx = -1;
+        if      (rising & BTN0_MASK) btn_idx = 0;
+        else if (rising & BTN1_MASK) btn_idx = 1;
+
+        if (btn_idx >= 0) {
+            seq_state_t prev = state;
+            state = fsm_step(state, btn_idx);
+
+            /* Moore output: LED on iff state == S3 */
+            u32 led_state = ((state == S3) ? LED_DETECT_BIT : 0U) & LED_MASK;
+            XGpio_DiscreteWrite(&led_gpio, GPIO_CHANNEL, led_state);
+
+            int just_detected = (state == S3 && prev != S3);
+            if (just_detected) detect_count++;
+            if (just_detected) {
+                xil_printf("[BTN%d] %s -> %s  LED=ON   *** DETECTED #%u ***\r\n",
+                           btn_idx, state_name(prev), state_name(state), detect_count);
+            } else {
+                xil_printf("[BTN%d] %s -> %s  LED=%s\r\n",
+                           btn_idx, state_name(prev), state_name(state),
+                           (state == S3) ? "ON " : "OFF");
+            }
+        }
+        usleep(POLL_PERIOD_US);
+    }
+    return 0;
+}
+\end{lstlisting}
+
+% =============================================================================
+\section{Discussion and Expected Behaviour}
+% =============================================================================
+
+The on-board demonstration was reviewed live. For completeness, the
+expected UART trace under three representative input patterns is:
+
+\begin{lstlisting}[language={},basicstyle=\ttfamily\footnotesize,
+                   numbers=none,backgroundcolor=\color{codebg},
+                   frame=single,breaklines=true,
+                   xleftmargin=6pt,xrightmargin=2pt]
+# Happy path:  BTN0, BTN0, BTN1
+[BTN0] S0 -> S1  LED=OFF
+[BTN0] S1 -> S2  LED=OFF
+[BTN1] S2 -> S3  LED=ON   *** DETECTED #1 ***
+[BTN0] S3 -> S1  LED=OFF       (LED clears the moment we leave S3)
+
+# KMP path:  BTN0, BTN0, BTN0, BTN1   (extra BTN0 keeps us at S2)
+[BTN0] S0 -> S1  LED=OFF
+[BTN0] S1 -> S2  LED=OFF
+[BTN0] S2 -> S2  LED=OFF       (KMP self-loop, prefix preserved)
+[BTN1] S2 -> S3  LED=ON   *** DETECTED #2 ***
+
+# False start:  BTN0, BTN1
+[BTN0] S0 -> S1  LED=OFF
+[BTN1] S1 -> S0  LED=OFF
+\end{lstlisting}
+
+Three behaviours are worth highlighting. \textbf{(1) Moore output:}
+the LED is a pure function of \texttt{state}, so it lights up the
+instant the FSM enters \texttt{S3} and clears automatically on any
+subsequent press. \textbf{(2) KMP awareness at \texttt{S2} and
+\texttt{S3}:} an extra \texttt{BTN0} after \texttt{S2} or right after a
+detection does not throw away the matched prefix --- it preserves the
+\texttt{BTN0}-as-new-start-of-pattern semantics, which is what makes
+back-to-back matches like \texttt{BTN0,BTN0,BTN1,BTN0,BTN0,BTN1}
+produce two detections. \textbf{(3) Edge detection in software:}
+the 5\,ms polling loop only reacts to a 0$\rightarrow$1 transition on
+each button line, so holding a button does not flood the FSM with
+spurious events; samples where both buttons are high simultaneously
+are dropped to avoid ambiguous transitions.
+
+% =============================================================================
+\section{Conclusion}
+% =============================================================================
+
+The PS+PL system meets both deliverables: a bitstream \texttt{.xsa}
+exported from Vivado pairs the Zynq PS with two AXI GPIO blocks for
+buttons and LEDs, and the bare-metal application implements the
+4-state KMP detector for \texttt{BTN0, BTN0, BTN1} with
+\texttt{LD0\_G} as the detection indicator. The on-board demonstration
+matched the expected trace above: \texttt{LD0\_G} lights up exactly
+when the third press completes a valid sequence, redundant
+\texttt{BTN0}s do not invalidate the in-progress match, and any other
+press correctly resets the FSM.
+
+\end{document}
