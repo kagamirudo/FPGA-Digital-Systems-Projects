@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/cord_sqr_app/build",
+  "command": "/mnt/Gary04/2025.2/Vitis/gnu/aarch32/lin/gcc-arm-none-eabi/bin/arm-none-eabi-gcc -I/home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/cord_sqr_app/src -isystem /home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/platform/export/platform/sw/standalone_ps7_cortexa9_0/include -isystem /mnt/Gary04/2025.2/gnu/aarch32/lin/gcc-arm-none-eabi/x86_64-oesdk-linux/usr/lib/arm-xilinx-eabi/gcc/arm-xilinx-eabi/13.3.0/include -isystem /mnt/Gary04/2025.2/gnu/aarch32/lin/gcc-arm-none-eabi/x86_64-oesdk-linux/usr/lib/arm-xilinx-eabi/gcc/arm-xilinx-eabi/13.3.0/include-fixed -isystem /mnt/Gary04/2025.2/Vitis/gnu/aarch32/lin/gcc-arm-none-eabi/aarch32-xilinx-eabi/usr/include  -DSDT -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard  -MMD -MP -specs=/home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/platform/export/platform/sw/standalone_ps7_cortexa9_0/Xilinx.spec -I/home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/platform/export/platform/sw/standalone_ps7_cortexa9_0/include -Wall -Wextra      -O0  -g3     -U__clang__ -o CMakeFiles/cord_sqr_app.elf.dir/home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/cord_sqr_app/main.c.obj -c /home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/cord_sqr_app/main.c",
+  "file": "/home/kagamirudo/ECEC661/Homework_4/cordic_sqrt/workspace/cord_sqr_app/main.c"
+}
+]
