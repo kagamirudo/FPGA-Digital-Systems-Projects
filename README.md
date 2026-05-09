@@ -17,9 +17,13 @@ ECEC661/
 ├── Homework_3/
 │   ├── fib_gen/           # Fibonacci generator IP (custom AXI4-Lite)
 │   └── fix_acc/           # Fixed-point accumulator IP wrapping Xilinx c_accum
+├── Homework_4/
+│   ├── cordic_sqrt/       # CORDIC square root (xilinx.com:ip:cordic) + AXI4-Lite slave
+│   └── report/            # LaTeX write-up (PDF + figures)
 ├── ip_repo/               # Packaged custom IPs reused across projects
 │   ├── fib_axi_1.0/
-│   └── fix_acc_axi_1.0/
+│   ├── fix_acc_axi_1.0/
+│   └── src/               # cordic_sqrt_axi VHDL + cordic_0 XCI (packager output mirror)
 ├── Cora-Z7-07S-Master.xdc # Board constraints (pinout, voltages, clocks)
 ├── LICENSE
 └── README.md
@@ -48,8 +52,8 @@ Clone and open any sub-project in Vivado:
 
 ```bash
 git clone git@github.com:kagamirudo/FPGA-Digital-Systems-Projects.git
-cd FPGA-Digital-Systems-Projects/Homework_3/fix_acc
-vivado fix_acc.xpr
+cd FPGA-Digital-Systems-Projects/Homework_3/fix_acc   # or Homework_4/cordic_sqrt
+vivado fix_acc.xpr   # or open cordic_sqrt.xpr after creating it from the HW4 README
 ```
 
 Most projects ship a `scripts/setup.tcl` that regenerates IP blocks and
@@ -86,6 +90,16 @@ Two custom IPs exercising the full IP-packager flow:
 Both projects include block diagrams, VHDL-2008 testbenches, Vitis C test
 apps, and UART-based validation.
 
+### Homework 4 — CORDIC square root
+Custom **`cordic_sqrt_axi`** IP wrapping Xilinx **`cordic_0`** (Square Root,
+10-bit unsigned fraction, parallel / maximum pipelining). **`user_logic`** maps
+the assignment ports to AXI-Stream; the AXI4-Lite slave exposes `slv_reg0`–`slv_reg3`
+for \(x\), `din_tvalid`, \(z\), and `dout_tvalid`. Bare-metal **`sw/main.c`** drives
+the handshake and prints a 2Q7 / 1Q8 results table over UART. See
+[`Homework_4/cordic_sqrt/README.md`](Homework_4/cordic_sqrt/README.md) for
+`scripts/setup.tcl`, simulation, packaging, and suggested PL base address
+(`0x43C20000`). Typeset report: [`Homework_4/report/report.tex`](Homework_4/report/report.tex).
+
 ---
 
 ## Conventions
@@ -110,6 +124,7 @@ apps, and UART-based validation.
 | Homework 2    |  ✅  | ✅ |   ✅   |      —      |      ✅       |
 | Homework 3 — fib_gen | ✅ | ✅ | ✅ |     ✅      |      ✅       |
 | Homework 3 — fix_acc | ✅ | ✅ | ✅ |     ✅      |      ✅       |
+| Homework 4 — cordic_sqrt | ✅ | ✅ | ✅ |     ✅      |      ✅       |
 
 ---
 
