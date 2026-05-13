@@ -8,6 +8,7 @@
 #   make sync
 #   make amend
 #   make undo
+#   make clean              Remove Vivado/LaTeX junk under Homework_*
 # ============================================================================
 
 SHELL    := /bin/bash
@@ -19,7 +20,10 @@ b        ?= $(BRANCH)
 .DEFAULT_GOAL := help
 
 .PHONY: help status diff log pull fetch sync add commit push quick amend undo \
-        stash pop tag branch new-branch clean-branches
+        stash pop tag branch new-branch clean-branches clean
+
+# Homework trees where Vivado/LaTeX cruft is removed by `make clean`
+HW_DIRS := $(wildcard Homework_*)
 
 ## Show this help message
 help:
@@ -44,6 +48,7 @@ help:
 	@echo "  make tag v=vX.Y.Z        Create and push annotated tag"
 	@echo "  make new-branch b=name   Create & switch to new branch"
 	@echo "  make clean-branches      Delete merged local branches"
+	@echo "  make clean               Remove Vivado/LaTeX junk under Homework_* (close tools first)"
 
 ## Show working tree status
 status:
@@ -136,3 +141,38 @@ new-branch:
 ## Delete local branches already merged into main
 clean-branches:
 	@git branch --merged main | grep -vE '^\*|^\s*main$$' | xargs -r git branch -d
+
+## Remove regenerable Vivado journals/logs and LaTeX aux under Homework_*
+## (backup *.jou/*.log are always stale; close Vivado/Vitis before running)
+clean:
+	@if [ -z "$(HW_DIRS)" ]; then echo "No Homework_* directories found."; exit 0; fi
+	@echo "Cleaning Vivado/LaTeX artifacts under $(HW_DIRS) …"
+	@find $(HW_DIRS) -type f \
+		'!' -path '*/CMakeFiles/*' \
+		'!' -path '*/workspace/_ide/*' \
+		'!' -path '*/workspace/*/.metadata/*' \
+		\( \
+		-name '*.backup.jou' -o \
+		-name '*.backup.log' -o \
+		-name 'webtalk*' -o \
+		-name 'hs_err_pid*.log' -o \
+		-name 'vivado.jou' -o \
+		-name 'vivado.log' -o \
+		-name 'xsim.jou' -o \
+		-name 'xsim.log' -o \
+		-name 'ip_upgrade.log' -o \
+		-name 'xelab.log' -o \
+		-name 'xvhdl.log' -o \
+		-name 'xvlog.log' -o \
+		-name 'compile.log' -o \
+		-name 'elaborate.log' -o \
+		-name 'simulate.log' -o \
+		-name 'runme.log' \
+		\) -print -delete
+	@find $(HW_DIRS) -path '*/report/*' -type f \
+		\( -name '*.aux' -o -name '*.log' -o -name '*.out' -o -name '*.toc' -o \
+		   -name '*.fls' -o -name '*.fdb_latexmk' -o -name '*.synctex.gz' -o \
+		   -name '*.bbl' -o -name '*.blg' -o -name '*.lof' -o -name '*.lot' \) \
+		-print -delete
+	@find $(HW_DIRS) -depth -type d -name '.Xil' -print -exec rm -rf {} + 2>/dev/null || true
+	@echo "Done."
