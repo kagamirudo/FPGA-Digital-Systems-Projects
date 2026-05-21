@@ -1,0 +1,37 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Problem Statement}{1}{section.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}IP Catalog Configuration}{1}{section.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces \texttt  {c\_addsub\_0} customisation parameters.}}{1}{table.caption.1}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:ipconfig}{{1}{1}{\texttt {c\_addsub\_0} customisation parameters}{table.caption.1}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {1}{\ignorespaces Key IP-generation excerpt from \texttt  {setup.tcl}}}{2}{lstlisting.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}User Logic HDL Code}{2}{section.3}\protected@file@percent }
+\newlabel{lst:userlogic}{{2}{2}{user\_logic.vhd}{lstlisting.2}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {2}{\ignorespaces user\_logic.vhd}}{2}{lstlisting.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}S\_AXI Slave -- Component Instantiation and Port Map}{3}{section.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Software-visible register map exposed by the slave.}}{3}{table.caption.2}\protected@file@percent }
+\newlabel{tab:regmap}{{2}{3}{Software-visible register map exposed by the slave}{table.caption.2}{}}
+\newlabel{lst:slv}{{3}{3}{\texttt {add\_const\_axi\_v1\_0\_S00\_AXI.vhd} -- user\_logic component declaration, instantiation, and read mux}{lstlisting.3}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {3}{\ignorespaces \texttt  {add\_const\_axi\_v1\_0\_S00\_AXI.vhd} -- user\_logic component declaration, instantiation, and read mux}}{3}{lstlisting.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Self-Checking Testbench}{5}{section.5}\protected@file@percent }
+\newlabel{lst:tb}{{4}{5}{tb\_user\_logic.vhd -- excerpt of the self-checking stimulus and check procedure}{lstlisting.4}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {4}{\ignorespaces tb\_user\_logic.vhd -- excerpt of the self-checking stimulus and check procedure}}{5}{lstlisting.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Simulation Results}{6}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Waveform}{6}{subsection.6.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Behavioural simulation of \texttt  {tb\_user\_logic}. The input \texttt  {x} walks the reference run $-5,\,-4,\,\dots  ,\,3$ and the boundary cases \texttt  {INT32\_MAX} and \texttt  {INT32\_MIN}. The output \texttt  {z} consistently equals \texttt  {x - 1} (with the expected signed wrap on \texttt  {INT32\_MIN}).}}{6}{figure.caption.3}\protected@file@percent }
+\newlabel{fig:wave}{{1}{6}{Behavioural simulation of \texttt {tb\_user\_logic}. The input \texttt {x} walks the reference run $-5,\,-4,\,\dots ,\,3$ and the boundary cases \texttt {INT32\_MAX} and \texttt {INT32\_MIN}. The output \texttt {z} consistently equals \texttt {x - 1} (with the expected signed wrap on \texttt {INT32\_MIN})}{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Console output}{6}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}IP Packaging}{7}{section.7}\protected@file@percent }
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {5}{\ignorespaces Excerpt of \texttt  {package.tcl} -- identification, sub-core reference, clock parameters}}{7}{lstlisting.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Block Design and \texttt  {.xsa} Export}{8}{section.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Block diagram of the test-bench project: Zynq~PS (\texttt  {processing\_system7\_0}) drives the AXI Interconnect, which masters the custom \texttt  {add\_const\_axi\_0} slave. \textit  {Validate Design} returns clean; the same project produces the bitstream and is the source of the exported \texttt  {add\_const.xsa}.}}{8}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:bd}{{2}{8}{Block diagram of the test-bench project: Zynq~PS (\texttt {processing\_system7\_0}) drives the AXI Interconnect, which masters the custom \texttt {add\_const\_axi\_0} slave. \textit {Validate Design} returns clean; the same project produces the bitstream and is the source of the exported \texttt {add\_const.xsa}}{figure.caption.4}{}}
+\@writefile{lol}{\contentsline {lstlisting}{\numberline {6}{\ignorespaces Bitstream and \texttt  {.xsa} export}}{8}{lstlisting.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Vitis Test Application (optional)}{9}{section.9}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Vitis Serial Monitor output for \texttt  {add\_const\_app}. The probe banner confirms AXI write/read works at base address \texttt  {0x43C0\_0000}; the test table then prints 13 vectors (the hand-out reference run plus 4 boundary cases), all marked \texttt  {[OK]}, and the run finishes with \texttt  {Summary : 13 / 13 PASSED}.}}{10}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:vitis}{{3}{10}{Vitis Serial Monitor output for \texttt {add\_const\_app}. The probe banner confirms AXI write/read works at base address \texttt {0x43C0\_0000}; the test table then prints 13 vectors (the hand-out reference run plus 4 boundary cases), all marked \texttt {[OK]}, and the run finishes with \texttt {Summary : 13 / 13 PASSED}}{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {10}Conclusion}{10}{section.10}\protected@file@percent }
+\gdef \@abspage@last{11}
