@@ -1,0 +1,475 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[letterpaper,top=0.45in,bottom=0.5in,left=0.5in,right=0.5in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{amsmath}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+}
+
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{2pt}
+\captionsetup{skip=2pt,font=small}
+
+\graphicspath{{figures/}}
+
+% -----------------------------------------------------------------------------
+% Optional figures: if the screenshot has not yet been captured from
+% Vivado/Vitis, fall back to a labelled framed box so the rest of the
+% report still compiles cleanly.
+% -----------------------------------------------------------------------------
+\usepackage{tikz}
+\newcommand{\optionalfig}[3][\textwidth]{%
+    \IfFileExists{figures/#2}{%
+        \includegraphics[width=#1]{#2}%
+    }{%
+        \begin{tikzpicture}
+            \draw[dashed,thick] (0,0) rectangle (#1,4cm);
+            \node[align=center] at (0.5*#1,2cm) {%
+                \textit{placeholder:} \texttt{#2}\\[2pt]
+                {\footnotesize #3}%
+            };
+        \end{tikzpicture}%
+    }%
+}
+
+% -----------------------------------------------------------------------------
+% Code listing styles
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecmt}{RGB}{0,120,0}
+\definecolor{codestr}{RGB}{170,55,20}
+\definecolor{codenum}{RGB}{120,120,120}
+
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecmt}\itshape,
+    stringstyle=\color{codestr},
+    numbers=left,
+    numberstyle=\tiny\color{codenum},
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=4,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=false,
+    breakindent=0pt,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    captionpos=b,
+    aboveskip=4pt,
+    belowskip=4pt,
+    xleftmargin=6pt,
+    xrightmargin=2pt,
+    columns=fullflexible,
+    keepspaces=true,
+    morekeywords={u32,s32,Xil_Out32,Xil_In32}
+}
+
+\lstdefinelanguage{VHDLsmall}{
+    sensitive=false,
+    morekeywords={architecture,begin,case,component,downto,else,elsif,end,
+        entity,if,is,library,others,port,map,signal,std_logic,
+        std_logic_vector,then,to,use,when,work,all,generic,return,process,
+        rising_edge,unsigned,signed,std_logic_unsigned,numeric_std,
+        constant,variable,type,array,natural,integer,for,loop,while},
+    morecomment=[l]--
+}
+
+\lstdefinestyle{vhdlstyle}{
+    language=VHDLsmall,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecmt}\itshape,
+    numbers=left,
+    numberstyle=\tiny\color{codenum},
+    numbersep=5pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=4,
+    breaklines=true,
+    captionpos=b,
+    aboveskip=4pt,
+    belowskip=4pt,
+    xleftmargin=6pt,
+    xrightmargin=2pt,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\title{\vspace{-0.6in}\textbf{ECEC 661 -- Homework 5}\\
+       \large Stack Processor 101 with new \texttt{scpb} block-copy instruction}
+\author{Gary Pham \texttt{(gp492)}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-0.25in}
+
+% =============================================================================
+\section{Problem Statement}
+% =============================================================================
+
+Starting from the assignment PDF's Stack Processor~101 (\texttt{sp101}),
+implement a new machine instruction \texttt{scpb} -- \emph{stack copy
+block} -- which pops three arguments from the data stack and copies a
+contiguous block of memory. The user-visible calling convention is:
+\[
+\texttt{sc}\ \texttt{dest\_addr}\quad
+\texttt{sc}\ \texttt{source\_addr}\quad
+\texttt{sc}\ \texttt{number\_of\_data}\quad
+\texttt{scpb}
+\]
+At entry the stack top holds \texttt{number\_of\_data}, then
+\texttt{source\_addr}, then \texttt{dest\_addr}. \texttt{scpb} pops in
+that order and copies \texttt{number\_of\_data} consecutive 32-bit words
+from \texttt{source\_addr} into the contiguous block starting at
+\texttt{dest\_addr}. Deliverables: the updated user logic, behavioural
+simulation evidence of correctness, IP packaging of \texttt{sp101}, and
+a Vitis test application with proof on the Cora~Z7-07S.
+
+% =============================================================================
+\section{Architecture}
+% =============================================================================
+
+The IP keeps the assignment PDF's three-block layout
+(Figure~\ref{fig:bd}): an AXI4-Lite slave exposes the five
+software-visible registers, a \texttt{bus\_ip\_mem\_bridge} multiplexes
+the bus or the processor onto the single port of
+\texttt{blk\_mem\_gen\_0}, and the stack processor (\texttt{user\_logic})
+fetches/executes machine instructions out of that BRAM.
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[0.92\textwidth]{diagram.png}{Vivado block design screenshot
+        (Zynq PS, AXI interconnect, \texttt{sp101\_axi\_0}).}
+    \caption{Vivado block design: Zynq PS, AXI interconnect, and the custom
+             \texttt{sp101\_axi} IP (\texttt{user\_logic} + bridge + BRAM
+             inside).}
+    \label{fig:bd}
+\end{figure}
+
+% =============================================================================
+\section{Software Register Map}
+% =============================================================================
+
+The slave maps five 32-bit registers into a 32-byte aperture, identical
+to the PDF's reference C snippet:
+
+\begin{table}[H]
+    \centering
+    \caption{Software register map (byte offsets from
+             \texttt{XPAR\_SP101\_AXI\_0\_S00\_AXI\_BASEADDR}).}
+    \label{tab:regs}
+    \small
+    \begin{tabular}{clcp{8.0cm}}
+        \toprule
+        \textbf{Offset} & \textbf{Name} & \textbf{R/W} & \textbf{Purpose} \\
+        \midrule
+        \texttt{0x00} & \texttt{slv\_reg0} & R/W &
+            control: bit~0~=\texttt{run}, bit~1~=\texttt{reset},
+            bit~2~=\texttt{bus2mem\_en}, bit~3~=\texttt{bus2mem\_we} \\
+        \texttt{0x04} & \texttt{slv\_reg1} & R/W &
+            \texttt{bus2mem\_addr} (lower 10 bits) \\
+        \texttt{0x08} & \texttt{slv\_reg2} & R/W &
+            \texttt{bus2mem\_data\_in} (32 bit) \\
+        \texttt{0x0C} & \texttt{slv\_reg3} & R   &
+            \texttt{sp2bus\_data\_out} (32 bit) \\
+        \texttt{0x10} & \texttt{slv\_reg4} & R   &
+            bit~0 = \texttt{done} flag \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Instruction Set and \texttt{scpb} Opcode}
+% =============================================================================
+
+The processor honours every opcode from the assignment PDF and adds a
+new family for \texttt{scpb}. The lowest hex digit of each constant is
+the micro-step index inside the instruction; the higher hex digits are
+the opcode group.
+
+\begin{table}[H]
+    \centering
+    \caption{Instruction set (opcode entry constants in
+             \href{run:../stackprocessor_101/rtl/user_logic.vhd}{\texttt{user\_logic.vhd}}).}
+    \label{tab:isa}
+    \small
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Mnemonic} & \textbf{Code} & \textbf{Stack effect} & \textbf{Notes} \\
+        \midrule
+        \texttt{halt} & \texttt{0x000000FF} & --                                            & raise \texttt{done}, halt \\
+        \texttt{sc}   & \texttt{0x00000001} & push \(c\)                                    & push constant pointed by pc \\
+        \texttt{sl}   & \texttt{0x00000011} & pop \(a\), push \(\mathrm{mem}[a]\)           & indirect load \\
+        \texttt{ss}   & \texttt{0x00000021} & pop \(d\), pop \(a\), \(\mathrm{mem}[a]\)~\(\leftarrow d\) & indirect store \\
+        \texttt{sadd} & \texttt{0x00000031} & pop, pop, push sum                            & stack add \\
+        \texttt{scp}  & \texttt{0x00000101} & pop \(s\), pop \(d\), \(\mathrm{mem}[d]\)~\(\leftarrow \mathrm{mem}[s]\) & single-word copy \\
+        \texttt{scpb} & \texttt{0x00000201} & pop \(N\), pop \(s\), pop \(d\), block copy   & \textbf{NEW} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{\texttt{scpb} micro-program}
+
+The FSM (\texttt{Homework\_5/stackprocessor\_101/rtl/user\_logic.vhd},
+state \texttt{exe} branch) walks \texttt{scpb} through three phases:
+pop the three arguments, loop over the copy, and per-iteration
+bookkeeping. The PDF's simulation latency cushion is preserved: each
+BRAM read step has the same number of extra ``mem\_addr settled /
+douta valid / mem\_data\_out latched'' micro-states the legacy opcodes
+use.
+
+\begin{lstlisting}[style=vhdlstyle,caption={Core micro-states (excerpt of
+\texttt{when SCPB ...} body in \texttt{user\_logic.vhd}).},label={lst:scpb}]
+when SCPB =>                            -- init pop count
+    mem_addr <= std_logic_vector(unsigned(sp) - 1);
+    sp       <= std_logic_vector(unsigned(sp) - 1);
+    we       <= "0"; ir <= SCPB2;
+...
+when SCPB5 =>                           -- count valid -> copy_cnt
+    copy_cnt <= mem_data_out;
+    ir       <= SCPB6;
+when SCPB6 =>                           -- source valid -> copy_src
+    copy_src <= mem_data_out(A-1 downto 0);
+    ir       <= SCPB7;
+when SCPB7 =>                           -- dest valid -> copy_dst, enter loop
+    copy_dst <= mem_data_out(A-1 downto 0);
+    ir       <= SCPB_L;
+when SCPB_L =>
+    if unsigned(copy_cnt) = 0 then
+        n_s <= fetch;                   -- block copy finished
+    else
+        mem_addr <= copy_src; ir <= SCPB_R1;
+    end if;
+when SCPB_R4 =>                         -- source word -> schedule write
+    mem_addr    <= copy_dst;
+    mem_data_in <= mem_data_out;
+    we          <= "1"; ir <= SCPB_W;
+when SCPB_W =>                          -- write fires, bookkeeping
+    copy_src <= std_logic_vector(unsigned(copy_src) + 1);
+    copy_dst <= std_logic_vector(unsigned(copy_dst) + 1);
+    copy_cnt <= std_logic_vector(unsigned(copy_cnt) - 1);
+    we       <= "0"; ir <= SCPB_L;
+\end{lstlisting}
+
+Pre-loop overhead is 7 cycles, each iteration costs 6 cycles, and the
+terminal check adds one more, so a block of $N$ words takes roughly
+$6N+8$ clocks plus the usual \texttt{fetch} overhead.
+
+% =============================================================================
+\section{Behavioral Simulation}
+% =============================================================================
+
+\texttt{tb/tb\_user\_logic.vhd} drives the same \texttt{run},
+\texttt{reset}, \texttt{bus2mem\_*} signals the assignment's xsim script
+forces, walking three self-checking scenarios:
+
+\begin{enumerate}
+    \item \emph{multi-word}: copy three words
+          (\texttt{0x0B,0x16,0x21}) from addresses \(100\ldots102\) to
+          \(200\ldots202\),
+    \item \emph{single word}: copy one word (\texttt{0x63}) from
+          address \(110\) to \(210\) (off-by-one guard),
+    \item \emph{zero count}: pre-fill \(220 = \mathtt{0xDEADBEEF}\), run
+          \texttt{scpb} with \texttt{count}=0, then verify the
+          destination is unchanged (no-op guard).
+\end{enumerate}
+
+Each scenario emits one \texttt{[PASS]} per destination word followed by
+the testbench banner. Figure~\ref{fig:sim} shows the full xsim run
+spanning all three scenarios; the integer
+\texttt{checks} counter climbs from~0 to~5 while \texttt{errors} stays
+at~0, confirming every destination word matches its golden value.
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[\textwidth]{sim.png}{xsim waveform spanning the entire
+        \texttt{tb\_user\_logic} run, with \texttt{checks=5} and
+        \texttt{errors=0}.}
+    \caption{xsim waveform across the full testbench run.  \texttt{n\_s}
+             cycles \texttt{idle\,$\to$\,exe\,$\to$\,chill} three times,
+             once per scenario.  The block-copy registers walk through
+             scenario~1 (\texttt{copy\_src}: 100,101,102~--
+             \texttt{copy\_dst}: 200,201,202 -- \texttt{copy\_cnt}:
+             3,2,1,0), scenario~2 (110~$\to$~210, count=1), and
+             scenario~3 (120/220, count=0 no-op).  The
+             \texttt{checks}/\texttt{errors} integers in the wave window
+             prove the self-check passes (5/0).}
+    \label{fig:sim}
+\end{figure}
+
+% =============================================================================
+\section{Software (\texttt{main.c})}
+% =============================================================================
+
+The bare-metal application
+(\texttt{Homework\_5/stackprocessor\_101/sw/main.c}) drives the AXI4-Lite
+peripheral through the exact handshake described in the PDF. It also
+follows the same scenario list as the testbench so the on-board UART log
+matches the simulator output line-for-line.
+
+\begin{lstlisting}[caption={Core of \texttt{main.c}: write a word to BRAM,
+                           run, read it back.},label={lst:handshake}]
+/* IMPORTANT: never assert CTRL_RESET while reading.  The mem_data_out
+ * register chain inside user_logic is forced to 0 while reset='1', so
+ * a read with reset held returns 0x00000000 and silently masks both the
+ * pre-written sentinel and the scpb result. */
+
+static void mem_write(u32 addr, u32 data)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL,     CTRL_BUS_EN | CTRL_BUS_WE);
+    SP101_mWriteReg(BASEADDR, REG_BUS_ADDR, addr & 0x3FFU);
+    SP101_mWriteReg(BASEADDR, REG_BUS_DIN,  data);
+}
+
+static u32 mem_read(u32 addr)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL,     CTRL_BUS_EN);
+    SP101_mWriteReg(BASEADDR, REG_BUS_ADDR, addr & 0x3FFU);
+    for (volatile int s = 0; s < 64; s++) { }
+    return SP101_mReadReg(BASEADDR, REG_SP_DOUT);
+}
+
+static void processor_reset(void)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL, CTRL_RESET | CTRL_BUS_EN);
+    for (volatile int s = 0; s < 64; s++) { }
+    SP101_mWriteReg(BASEADDR, REG_CTRL, CTRL_BUS_EN);
+}
+
+static void processor_run_and_wait(void)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL, CTRL_RUN);
+    while ((SP101_mReadReg(BASEADDR, REG_DONE) & 0x1U) == 0U) { }
+    SP101_mWriteReg(BASEADDR, REG_CTRL, 0U);
+}
+\end{lstlisting}
+
+% =============================================================================
+\section{Hardware Results}
+% =============================================================================
+
+The same three scenarios were re-executed on the Cora~Z7-07S over the
+AXI4-Lite interface.  The UART transcript (Figure~\ref{fig:vitis})
+reports every dest word readback as \texttt{OK} and ends with
+\texttt{Summary : 3/3 scenarios PASSED}, matching the simulation
+result line-for-line.  The exact captured trace is reproduced in
+Listing~\ref{lst:uart} for reference.
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[0.55\textwidth]{vitis.png}{PuTTY / serial-monitor capture
+        of the three \texttt{scpb} scenarios on Cora Z7-07S.}
+    \caption{UART trace from the bare-metal \texttt{sp101 + scpb} test app
+             running on the Cora~Z7-07S: the multi-word
+             ($100..102\to200..202$), single-word ($110\to210$), and
+             zero-count ($\mathtt{0xDEADBEEF}$ sentinel preserved at
+             address~220) scenarios all PASS.}
+    \label{fig:vitis}
+\end{figure}
+
+\begin{lstlisting}[language={},caption={Captured UART trace
+                           (verbatim from the Cora~Z7-07S
+                           run).},label={lst:uart}]
+==========================================================
+   ECEC 661 HW5 - Stack Processor 101 + scpb block copy
+   IP base address : 0x43C30000
+==========================================================
+
+---- Scenario: scpb count=3 (multi-word) ----
+  dest=200  src=100  count=3
+  -- destination dump --
+    [200] got=0x0000000B  expect=0x0000000B   OK
+    [201] got=0x00000016  expect=0x00000016   OK
+    [202] got=0x00000021  expect=0x00000021   OK
+  RESULT: PASS
+
+---- Scenario: scpb count=1 (single word) ----
+  dest=210  src=110  count=1
+  -- destination dump --
+    [210] got=0x00000063  expect=0x00000063   OK
+  RESULT: PASS
+
+---- Scenario: scpb count=0 (no-op) ----
+  dest=220  src=120  count=0
+  -- destination dump --
+    [220] got=0xDEADBEEF  expect=0xDEADBEEF   OK
+  RESULT: PASS
+
+----------------------------------------------------------
+   Summary : 3/3 scenarios PASSED
+----------------------------------------------------------
+\end{lstlisting}
+
+\begin{table}[H]
+    \centering
+    \caption{Reference test vectors for \texttt{scpb} (identical in
+             simulation and on hardware).}
+    \label{tab:vectors}
+    \small
+    \begin{tabular}{clllll}
+        \toprule
+        \textbf{Scenario} & \texttt{count} & \texttt{source} & \texttt{dest} & \textbf{Source words} & \textbf{Expected at dest} \\
+        \midrule
+        multi-word  & 3 & 100 & 200 & \texttt{0x0B, 0x16, 0x21} & \texttt{0x0B, 0x16, 0x21} \\
+        single-word & 1 & 110 & 210 & \texttt{0x63}              & \texttt{0x63}              \\
+        zero-count  & 0 & 120 & 220 & \emph{(unused)}            & \texttt{0xDEADBEEF} (unchanged) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Driver gotcha worth flagging}
+
+While bringing the bare-metal app up, all three on-board scenarios
+initially failed with \texttt{got=0x00000000} for every dump line
+(including the \texttt{0xDEADBEEF} sentinel of the no-op test, which
+should never be touched).  The cause was that the original
+\texttt{mem\_read()} held \texttt{CTRL\_RESET} while reading
+\texttt{slv\_reg3}; the \texttt{mem\_data\_out} register chain in
+\texttt{user\_logic.vhd} clears on \texttt{reset='1'}, so every read
+returned~0.  The fix shown in Listing~\ref{lst:handshake} only pulses
+reset inside \texttt{processor\_reset()} and keeps it low for the rest
+of each scenario.  As a defensive belt-and-braces, the
+\texttt{p\_mdo} register chain in
+\href{run:../stackprocessor_101/rtl/user_logic.vhd}{\texttt{user\_logic.vhd}}
+no longer zero-clears on reset, so a future driver misuse cannot
+silently mask read data.
+
+% =============================================================================
+\section{Conclusion}
+% =============================================================================
+
+The Homework~5 design starts from the assignment PDF's Stack
+Processor~101, adds a 13-state \texttt{scpb} micro-program for arbitrary
+block copies, packages the result as the AXI4-Lite IP \texttt{sp101\_axi},
+and exercises every code path (multi-word, single-word, zero-count) in
+both behavioural simulation (Figure~\ref{fig:sim}, \texttt{checks=5},
+\texttt{errors=0}) and on the Cora~Z7-07S
+(Figure~\ref{fig:vitis} / Listing~\ref{lst:uart},
+\texttt{3/3 scenarios PASSED}).  Each deliverable
+listed in \href{run:../prob.md}{\texttt{Homework\_5/prob.md}} maps to a
+concrete artifact under
+\href{run:../stackprocessor_101/}{\texttt{Homework\_5/stackprocessor\_101/}}
+and is reproduced by following \texttt{README.md}.
+
+\end{document}
