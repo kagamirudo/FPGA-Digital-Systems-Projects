@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- tb_user_logic.vhd
 --
--- ECEC 661 - Final (real) - Stack Processor 101 with new `ssq` instruction
+-- ECEC 661 - Final - Stack Processor 101 with new `ssq` instruction
 --
 -- Self-checking VHDL-2008 testbench driving `user_logic` exactly the way the
 -- assignment PDF's xsim script does (raw bus2mem_* / run / reset / done),
@@ -272,6 +272,21 @@ begin
             check_word(scenario_label, STACK_BASE, got, expected);
         end procedure;
 
+        ------------------------------------------------------------------------
+        -- run_ssq_auto : wrapper that derives label + expected from x alone.
+        ------------------------------------------------------------------------
+        procedure run_ssq_auto (x_val : integer) is
+            variable sq : integer := x_val * x_val;
+        begin
+            run_ssq(
+                scenario_label => "ssq x=" & integer'image(x_val) &
+                                  " -> " & integer'image(sq),
+                x_in           => x_val,
+                sentinel       => x"DEADBEEF",
+                expected       => std_logic_vector(to_unsigned(sq, 32))
+            );
+        end procedure;
+
     begin
         ------------------------------------------------------------------------
         -- Reset for a few cycles before the first test
@@ -290,18 +305,7 @@ begin
         -- Run every vector in SSQ_X_VALUES
         ------------------------------------------------------------------------
         for i in SSQ_X_VALUES'range loop
-            declare
-                variable x_val : integer := SSQ_X_VALUES(i);
-                variable sq    : integer := SSQ_X_VALUES(i) * SSQ_X_VALUES(i);
-            begin
-                run_ssq(
-                    scenario_label => "ssq x=" & integer'image(x_val) &
-                                      " -> " & integer'image(sq),
-                    x_in           => x_val,
-                    sentinel       => x"DEADBEEF",
-                    expected       => std_logic_vector(to_unsigned(sq, 32))
-                );
-            end;
+            run_ssq_auto(SSQ_X_VALUES(i));
         end loop;
 
         ------------------------------------------------------------------------
