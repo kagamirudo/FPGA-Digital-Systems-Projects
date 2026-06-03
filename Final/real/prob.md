@@ -1,8 +1,8 @@
-new instruction on the sp101, ssq "stack the square"
+New instruction on the sp101, ssq "stack the square"
 
 After executing, for example
 
-sc 7 ssq shalt
+sc 7 ssq halt
 
 sp101 write 49 on the stack and the stack pointer points to the next available address location.
 
