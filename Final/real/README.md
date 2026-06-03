@@ -66,26 +66,34 @@ Opcode: `0x00000041` (slots into the unused `0x4x` family between
    ```
 
 3. **Run Simulation -> Run Behavioral Simulation**, then in the xsim Tcl
-   console:
+   console load the pre-made wave script (decimal radix on data paths):
 
    ```tcl
-   add_wave /tb_user_logic/ck
-   add_wave /tb_user_logic/reset_sig /tb_user_logic/run_sig
-   add_wave /tb_user_logic/bus2mem_en /tb_user_logic/bus2mem_we
-   add_wave -radix unsigned /tb_user_logic/bus2mem_addr
-   add_wave -radix hex      /tb_user_logic/bus2mem_data_in
-   add_wave -radix hex      /tb_user_logic/sp2bus_data_out
-   add_wave /tb_user_logic/done_sig
-   add_wave /tb_user_logic/dut/n_s
-   add_wave -radix hex      /tb_user_logic/dut/ir
-   add_wave -radix unsigned /tb_user_logic/dut/sp
-   add_wave -radix hex      /tb_user_logic/dut/temp1
-   add_wave -radix hex      /tb_user_logic/dut/mem_data_in
-   add_wave -radix unsigned /tb_user_logic/checks
-   add_wave -radix unsigned /tb_user_logic/errors
+   source /path/to/ECEC661/Final/real/stackprocessor_101/scripts/sim_waves.tcl
    restart
    run all
    ```
+
+   The script uses `-radix unsigned` on `bus2mem_data_in`, `sp2bus_data_out`,
+   `temp1`, `mem_data_in`, and `mem_data_out` so you see `7 -> 49` directly
+   instead of hex.  Opcodes in `ir` stay hex because they are not numeric data.
+
+   **Test vectors** (12 cases, same in TB and C app):
+
+   | x | x² |
+   |---|-----|
+   | 7 | 49 |
+   | 0 | 0 |
+   | 1 | 1 |
+   | 2 | 4 |
+   | 3 | 9 |
+   | 10 | 100 |
+   | 15 | 225 |
+   | 16 | 256 |
+   | 255 | 65025 |
+   | 1000 | 1000000 |
+   | 32767 | 1073676289 |
+   | 46340 | 2147395600 |
 
    Expected terminal banner:
 
@@ -93,7 +101,7 @@ Opcode: `0x00000041` (slots into the unused `0x4x` family between
    +--------------------------------------------------+
    |     sp101 + ssq  stack-the-square TB summary     |
    +--------------------------------------------------+
-      checks executed : 3
+      checks executed : 12
       errors          : 0
    +--------------------------------------------------+
 
@@ -102,9 +110,12 @@ Opcode: `0x00000041` (slots into the unused `0x4x` family between
    ####################################################
    ```
 
+   Each `[PASS]` line prints decimal first, e.g.
+   `got=49 expected=49 (0x00000031)`.
+
 4. Capture the wave window (File -> Export -> Image, or screenshot) for
-   submission.  Zoom out so all three scenarios are visible and `checks`
-   reaches 3 / `errors` stays 0.  Save into `Final/real/figures/sim.png`.
+   submission.  Zoom out so all twelve scenarios are visible and `checks`
+   reaches **12** / `errors` stays **0**.  Save into `Final/real/figures/sim.png`.
 
 ## Part 2 - user logic IP (5 pts)
 
@@ -213,30 +224,27 @@ Expected output (capture screenshot for `Final/real/figures/vitis.png`):
    IP base address : 0x43c30000
 ==========================================================
 
----- Scenario: ssq x=7  (prompt) ----
+---- Scenario: ssq x=7 -> 49 ----
   program : sc 7  ssq  halt
-    address 128 = 0x00000031  (expected 0x00000031 = 49)  PASS
+    address 128 = 49  (expected 49 = 7^2)  PASS
+                  hex: got=0x00000031  expect=0x00000031
 
----- Scenario: ssq x=0  (zero) ----
-  program : sc 0  ssq  halt
-    address 128 = 0x00000000  (expected 0x00000000 = 0)  PASS
+---- Scenario: ssq x=0 -> 0 ----
+  ...
 
----- Scenario: ssq x=1  (one) ----
-  program : sc 1  ssq  halt
-    address 128 = 0x00000001  (expected 0x00000001 = 1)  PASS
-
----- Scenario: ssq x=13 (medium) ----
-  program : sc 13  ssq  halt
-    address 128 = 0x000000a9  (expected 0x000000a9 = 169)  PASS
+---- Scenario: ssq x=46340 -> 2147395600 ----
+  program : sc 46340  ssq  halt
+    address 128 = 2147395600  (expected 2147395600 = 46340^2)  PASS
+                  hex: got=0x7fffd210  expect=0x7fffd210
 
 ----------------------------------------------------------
-   Summary : 4/4 scenarios PASSED
+   Summary : 12/12 scenarios PASSED
 ----------------------------------------------------------
 ```
 
 The first scenario alone satisfies the prompt's "address 128 contains
-the square" requirement; the rest are headroom against off-by-one /
-no-op failure modes.
+the square" requirement; the other eleven vectors cover edge cases and
+wider operand ranges.
 
 ## Tree
 
@@ -259,4 +267,5 @@ Final/real/
     scripts/
       setup.tcl                    # blk_mem_gen_0 + add sources
       package.tcl                  # IP packager metadata + sub-core ref
+      sim_waves.tcl                # xsim waves with decimal data-path radix
 ```

@@ -16,10 +16,10 @@
 -- initialises sp = 128 and `sc 7` writes mem[128] = 7 then bumps sp to
 -- 129, `ssq` overwrites mem[128] with 7*7 = 49 and leaves sp = 129.
 --
--- Three scenarios are run:
---   * test 1 : sc 7 ssq halt  -> mem[128] = 49   (the prompt example)
---   * test 2 : sc 0 ssq halt  -> mem[128] =  0   (zero edge case)
---   * test 3 : sc 1 ssq halt  -> mem[128] =  1   (identity edge case)
+-- Test vectors (x -> x*x at mem[128]):
+--   7, 0, 1, 2, 3, 10, 15, 16, 255, 1000, 32767, 46340
+-- covering the prompt example, edge cases, small squares, byte-max,
+-- a round thousand, and max 16-bit input.
 --
 -- For each scenario the TB:
 --   1. holds `reset` high and `bus2mem_en` high so the bus owns memory,
@@ -79,6 +79,22 @@ architecture sim of tb_user_logic is
     ----------------------------------------------------------------------------
     signal checks : integer := 0;
     signal errors : integer := 0;
+
+    type int_vec is array (natural range <>) of integer;
+    constant SSQ_X_VALUES : int_vec := (
+        7,      -- prompt example  -> 49
+        0,      -- zero            -> 0
+        1,      -- identity        -> 1
+        2,      -- small           -> 4
+        3,      -- small           -> 9
+        10,     -- round           -> 100
+        15,     -- medium          -> 225
+        16,     -- power of two    -> 256
+        255,    -- byte max        -> 65025
+        1000,   -- round thousand  -> 1000000
+        32767,  -- 15-bit max      -> 1073676289
+        46340   -- near sqrt(2^31) -> 2147395600
+    );
 
 begin
 
@@ -156,16 +172,22 @@ begin
                               addr     : integer;
                               got      : std_logic_vector(31 downto 0);
                               expected : std_logic_vector(31 downto 0)) is
+            variable got_dec  : integer := to_integer(unsigned(got));
+            variable exp_dec  : integer := to_integer(unsigned(expected));
         begin
             checks <= checks + 1;
             if got = expected then
                 report "[PASS] " & tag & " addr=" & integer'image(addr) &
-                       " got=0x" & to_hstring(got)
+                       " got=" & integer'image(got_dec) &
+                       " expected=" & integer'image(exp_dec) &
+                       " (0x" & to_hstring(got) & ")"
                     severity note;
             else
                 report "[FAIL] " & tag & " addr=" & integer'image(addr) &
-                       " got=0x" & to_hstring(got) &
-                       " expected=0x" & to_hstring(expected)
+                       " got=" & integer'image(got_dec) &
+                       " expected=" & integer'image(exp_dec) &
+                       " (0x" & to_hstring(got) &
+                       " vs 0x" & to_hstring(expected) & ")"
                     severity error;
                 errors <= errors + 1;
             end if;
@@ -265,34 +287,22 @@ begin
         end loop;
 
         ------------------------------------------------------------------------
-        -- Test 1 : the prompt example  sc 7 ssq halt -> mem[128] = 49
+        -- Run every vector in SSQ_X_VALUES
         ------------------------------------------------------------------------
-        run_ssq(
-            scenario_label => "ssq x=7 (prompt example)",
-            x_in           => 7,
-            sentinel       => x"DEADBEEF",
-            expected       => x"00000031"   -- 49
-        );
-
-        ------------------------------------------------------------------------
-        -- Test 2 : zero edge case  sc 0 ssq halt -> mem[128] = 0
-        ------------------------------------------------------------------------
-        run_ssq(
-            scenario_label => "ssq x=0 (zero)",
-            x_in           => 0,
-            sentinel       => x"DEADBEEF",
-            expected       => x"00000000"
-        );
-
-        ------------------------------------------------------------------------
-        -- Test 3 : identity edge case  sc 1 ssq halt -> mem[128] = 1
-        ------------------------------------------------------------------------
-        run_ssq(
-            scenario_label => "ssq x=1 (identity)",
-            x_in           => 1,
-            sentinel       => x"DEADBEEF",
-            expected       => x"00000001"
-        );
+        for i in SSQ_X_VALUES'range loop
+            declare
+                variable x_val : integer := SSQ_X_VALUES(i);
+                variable sq    : integer := SSQ_X_VALUES(i) * SSQ_X_VALUES(i);
+            begin
+                run_ssq(
+                    scenario_label => "ssq x=" & integer'image(x_val) &
+                                      " -> " & integer'image(sq),
+                    x_in           => x_val,
+                    sentinel       => x"DEADBEEF",
+                    expected       => std_logic_vector(to_unsigned(sq, 32))
+                );
+            end;
+        end loop;
 
         ------------------------------------------------------------------------
         -- Final banner

@@ -28,11 +28,8 @@
  * then `ssq` reads mem[128] = x, squares it, and writes mem[128] = x*x
  * (leaving sp = 129 = "next available address").
  *
- * Scenarios run:
- *   * x = 7  -> mem[128] = 49   (assignment prompt example)
- *   * x = 0  -> mem[128] =  0
- *   * x = 1  -> mem[128] =  1
- *   * x = 13 -> mem[128] = 169
+ * Scenarios run (same vector table as tb_user_logic.vhd):
+ *   x = 7, 0, 1, 2, 3, 10, 15, 16, 255, 1000, 32767, 46340
  *
  * Each scenario:
  *   1) writes a sentinel into mem[128] so a no-op would be detected,
@@ -150,12 +147,13 @@ static void load_ssq_program(u32 x)
 /* --------------------------------------------------------------------------
  * Run one ssq scenario.  Returns 0 on PASS, 1 on FAIL.
  * -------------------------------------------------------------------------- */
-static unsigned run_ssq_scenario(const char *label, u32 x_in)
+static unsigned run_ssq_scenario(u32 x_in)
 {
     const u32 expected = x_in * x_in;
     const u32 sentinel = 0xDEADBEEFU;
 
-    xil_printf("\r\n---- Scenario: %s ----\r\n", label);
+    xil_printf("\r\n---- Scenario: ssq x=%u -> %u ----\r\n",
+               (unsigned) x_in, (unsigned) expected);
     xil_printf("  program : sc %u  ssq  halt\r\n", (unsigned) x_in);
 
     processor_reset();
@@ -170,9 +168,11 @@ static unsigned run_ssq_scenario(const char *label, u32 x_in)
     u32 got = mem_read(STACK_BASE);
     const char *verdict = (got == expected) ? "PASS" : "FAIL";
 
-    xil_printf("    address 128 = 0x%08x  (expected 0x%08x = %u)  %s\r\n",
-               (unsigned) got, (unsigned) expected, (unsigned) expected,
+    xil_printf("    address 128 = %u  (expected %u = %u^2)  %s\r\n",
+               (unsigned) got, (unsigned) expected, (unsigned) x_in,
                verdict);
+    xil_printf("                  hex: got=0x%08x  expect=0x%08x\r\n",
+               (unsigned) got, (unsigned) expected);
 
     return (got == expected) ? 0U : 1U;
 }
@@ -193,13 +193,27 @@ int main(void)
     unsigned scenarios = 0;
     unsigned passed    = 0;
 
-    /* Prompt example : sc 7  ssq  halt  -> mem[128] = 49 */
-    scenarios++; if (run_ssq_scenario("ssq x=7  (prompt)",  7U)  == 0U) passed++;
+    static const u32 x_values[] = {
+        7U,      /* prompt  -> 49 */
+        0U,      /* zero    -> 0 */
+        1U,      /* one     -> 1 */
+        2U,      /*         -> 4 */
+        3U,      /*         -> 9 */
+        10U,     /*         -> 100 */
+        15U,     /*         -> 225 */
+        16U,     /*         -> 256 */
+        255U,    /* byte max   -> 65025 */
+        1000U,   /*            -> 1000000 */
+        32767U,  /* 15-bit max -> 1073676289 */
+        46340U   /* stress     -> 2147395600 */
+    };
 
-    /* Edge cases */
-    scenarios++; if (run_ssq_scenario("ssq x=0  (zero)",    0U)  == 0U) passed++;
-    scenarios++; if (run_ssq_scenario("ssq x=1  (one)",     1U)  == 0U) passed++;
-    scenarios++; if (run_ssq_scenario("ssq x=13 (medium)", 13U)  == 0U) passed++;
+    for (u32 i = 0; i < (sizeof(x_values) / sizeof(x_values[0])); i++) {
+        scenarios++;
+        if (run_ssq_scenario(x_values[i]) == 0U) {
+            passed++;
+        }
+    }
 
     xil_printf("\r\n");
     xil_printf("----------------------------------------------------------\r\n");
