@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/sp101_ssq/build",
+  "command": "/home/kagamirudo/Xilinx/2025.2/Vitis/gnu/aarch32/lin/gcc-arm-none-eabi/bin/arm-none-eabi-gcc -I/home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/sp101_ssq/src -isystem /home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/platform/export/platform/sw/standalone_ps7_cortexa9_0/include -isystem /home/kagamirudo/Xilinx/2025.2/gnu/aarch32/lin/gcc-arm-none-eabi/x86_64-oesdk-linux/usr/lib/arm-xilinx-eabi/gcc/arm-xilinx-eabi/13.3.0/include -isystem /home/kagamirudo/Xilinx/2025.2/gnu/aarch32/lin/gcc-arm-none-eabi/x86_64-oesdk-linux/usr/lib/arm-xilinx-eabi/gcc/arm-xilinx-eabi/13.3.0/include-fixed -isystem /home/kagamirudo/Xilinx/2025.2/Vitis/gnu/aarch32/lin/gcc-arm-none-eabi/aarch32-xilinx-eabi/usr/include  -DSDT -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard  -MMD -MP -specs=/home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/platform/export/platform/sw/standalone_ps7_cortexa9_0/Xilinx.spec -I/home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/platform/export/platform/sw/standalone_ps7_cortexa9_0/include -Wall -Wextra      -O0  -g3     -U__clang__ -o CMakeFiles/sp101_ssq.elf.dir/home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/sp101_ssq/main.c.obj -c /home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/sp101_ssq/main.c",
+  "file": "/home/kagamirudo/ECE661/Final/real/stackprocessor_101/workspace/sp101_ssq/main.c"
+}
+]

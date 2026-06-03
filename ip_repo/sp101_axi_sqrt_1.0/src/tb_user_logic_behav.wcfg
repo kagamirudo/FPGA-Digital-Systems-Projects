@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb_user_logic_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="tb_user_logic" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,400.956 ns"></ZoomEndTime>
+      <Cursor1Time time="5,375.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="107"></NameColumnWidth>
+      <ValueColumnWidth column_width="83"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="84" />
+   <wvobject type="logic" fp_name="/tb_user_logic/ck">
+      <obj_property name="ElementShortName">ck</obj_property>
+      <obj_property name="ObjectShortName">ck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/run_sig">
+      <obj_property name="ElementShortName">run_sig</obj_property>
+      <obj_property name="ObjectShortName">run_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/reset_sig">
+      <obj_property name="ElementShortName">reset_sig</obj_property>
+      <obj_property name="ObjectShortName">reset_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_en">
+      <obj_property name="ElementShortName">bus2mem_en</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_we">
+      <obj_property name="ElementShortName">bus2mem_we</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_we</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_addr">
+      <obj_property name="ElementShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_addr[9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_data_in">
+      <obj_property name="ElementShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_data_in[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/sp2bus_data_out">
+      <obj_property name="ElementShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sp2bus_data_out[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/done_sig">
+      <obj_property name="ElementShortName">done_sig</obj_property>
+      <obj_property name="ObjectShortName">done_sig</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/checks">
+      <obj_property name="ElementShortName">checks</obj_property>
+      <obj_property name="ObjectShortName">checks</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/errors">
+      <obj_property name="ElementShortName">errors</obj_property>
+      <obj_property name="ObjectShortName">errors</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/CLK_PERIOD">
+      <obj_property name="ElementShortName">CLK_PERIOD</obj_property>
+      <obj_property name="ObjectShortName">CLK_PERIOD</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/A">
+      <obj_property name="ElementShortName">A</obj_property>
+      <obj_property name="ObjectShortName">A</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/OP_SC">
+      <obj_property name="ElementShortName">OP_SC</obj_property>
+      <obj_property name="ObjectShortName">OP_SC</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/OP_SSQ">
+      <obj_property name="ElementShortName">OP_SSQ</obj_property>
+      <obj_property name="ObjectShortName">OP_SSQ</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/OP_HALT">
+      <obj_property name="ElementShortName">OP_HALT</obj_property>
+      <obj_property name="ObjectShortName">OP_HALT</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/STACK_BASE">
+      <obj_property name="ElementShortName">STACK_BASE</obj_property>
+      <obj_property name="ObjectShortName">STACK_BASE</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/ck">
+      <obj_property name="ElementShortName">ck</obj_property>
+      <obj_property name="ObjectShortName">ck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/reset_sig">
+      <obj_property name="ElementShortName">reset_sig</obj_property>
+      <obj_property name="ObjectShortName">reset_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/run_sig">
+      <obj_property name="ElementShortName">run_sig</obj_property>
+      <obj_property name="ObjectShortName">run_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_en">
+      <obj_property name="ElementShortName">bus2mem_en</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_we">
+      <obj_property name="ElementShortName">bus2mem_we</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_we</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_addr">
+      <obj_property name="ElementShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_data_in">
+      <obj_property name="ElementShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/sp2bus_data_out">
+      <obj_property name="ElementShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/done_sig">
+      <obj_property name="ElementShortName">done_sig</obj_property>
+      <obj_property name="ObjectShortName">done_sig</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/dut/n_s">
+      <obj_property name="ElementShortName">n_s</obj_property>
+      <obj_property name="ObjectShortName">n_s</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/ir">
+      <obj_property name="ElementShortName">ir[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ir[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/ck">
+      <obj_property name="ElementShortName">ck</obj_property>
+      <obj_property name="ObjectShortName">ck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/reset_sig">
+      <obj_property name="ElementShortName">reset_sig</obj_property>
+      <obj_property name="ObjectShortName">reset_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/run_sig">
+      <obj_property name="ElementShortName">run_sig</obj_property>
+      <obj_property name="ObjectShortName">run_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_en">
+      <obj_property name="ElementShortName">bus2mem_en</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_we">
+      <obj_property name="ElementShortName">bus2mem_we</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_we</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_addr">
+      <obj_property name="ElementShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_data_in">
+      <obj_property name="ElementShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/sp2bus_data_out">
+      <obj_property name="ElementShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/done_sig">
+      <obj_property name="ElementShortName">done_sig</obj_property>
+      <obj_property name="ObjectShortName">done_sig</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/dut/n_s">
+      <obj_property name="ElementShortName">n_s</obj_property>
+      <obj_property name="ObjectShortName">n_s</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/ir">
+      <obj_property name="ElementShortName">ir[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ir[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/ck">
+      <obj_property name="ElementShortName">ck</obj_property>
+      <obj_property name="ObjectShortName">ck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/reset_sig">
+      <obj_property name="ElementShortName">reset_sig</obj_property>
+      <obj_property name="ObjectShortName">reset_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/run_sig">
+      <obj_property name="ElementShortName">run_sig</obj_property>
+      <obj_property name="ObjectShortName">run_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_en">
+      <obj_property name="ElementShortName">bus2mem_en</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_we">
+      <obj_property name="ElementShortName">bus2mem_we</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_we</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_addr">
+      <obj_property name="ElementShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_data_in">
+      <obj_property name="ElementShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/sp2bus_data_out">
+      <obj_property name="ElementShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/done_sig">
+      <obj_property name="ElementShortName">done_sig</obj_property>
+      <obj_property name="ObjectShortName">done_sig</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/dut/n_s">
+      <obj_property name="ElementShortName">n_s</obj_property>
+      <obj_property name="ObjectShortName">n_s</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/ir">
+      <obj_property name="ElementShortName">ir[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ir[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/sp">
+      <obj_property name="ElementShortName">sp[9:0]</obj_property>
+      <obj_property name="ObjectShortName">sp[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/temp1">
+      <obj_property name="ElementShortName">temp1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">temp1[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/mem_data_in">
+      <obj_property name="ElementShortName">mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_data_in[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/checks">
+      <obj_property name="ElementShortName">checks</obj_property>
+      <obj_property name="ObjectShortName">checks</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/errors">
+      <obj_property name="ElementShortName">errors</obj_property>
+      <obj_property name="ObjectShortName">errors</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/ck">
+      <obj_property name="ElementShortName">ck</obj_property>
+      <obj_property name="ObjectShortName">ck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/reset_sig">
+      <obj_property name="ElementShortName">reset_sig</obj_property>
+      <obj_property name="ObjectShortName">reset_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/run_sig">
+      <obj_property name="ElementShortName">run_sig</obj_property>
+      <obj_property name="ObjectShortName">run_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_en">
+      <obj_property name="ElementShortName">bus2mem_en</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_we">
+      <obj_property name="ElementShortName">bus2mem_we</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_we</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/done_sig">
+      <obj_property name="ElementShortName">done_sig</obj_property>
+      <obj_property name="ObjectShortName">done_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/ck">
+      <obj_property name="ElementShortName">ck</obj_property>
+      <obj_property name="ObjectShortName">ck</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/reset_sig">
+      <obj_property name="ElementShortName">reset_sig</obj_property>
+      <obj_property name="ObjectShortName">reset_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/run_sig">
+      <obj_property name="ElementShortName">run_sig</obj_property>
+      <obj_property name="ObjectShortName">run_sig</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_en">
+      <obj_property name="ElementShortName">bus2mem_en</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_en</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/bus2mem_we">
+      <obj_property name="ElementShortName">bus2mem_we</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_we</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb_user_logic/done_sig">
+      <obj_property name="ElementShortName">done_sig</obj_property>
+      <obj_property name="ObjectShortName">done_sig</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider123" type="divider">
+      <obj_property name="label">bus</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_addr">
+      <obj_property name="ElementShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_addr[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/bus2mem_data_in">
+      <obj_property name="ElementShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">bus2mem_data_in[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/sp2bus_data_out">
+      <obj_property name="ElementShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">sp2bus_data_out[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider127" type="divider">
+      <obj_property name="label">processor</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/dut/n_s">
+      <obj_property name="ElementShortName">n_s</obj_property>
+      <obj_property name="ObjectShortName">n_s</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/ir">
+      <obj_property name="ElementShortName">ir[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ir[31:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/sp">
+      <obj_property name="ElementShortName">sp[9:0]</obj_property>
+      <obj_property name="ObjectShortName">sp[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/pc">
+      <obj_property name="ElementShortName">pc[9:0]</obj_property>
+      <obj_property name="ObjectShortName">pc[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/mem_addr">
+      <obj_property name="ElementShortName">mem_addr[9:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_addr[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider133" type="divider">
+      <obj_property name="label">ssq_datapath</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/temp1">
+      <obj_property name="ElementShortName">temp1[31:0]</obj_property>
+      <obj_property name="ObjectShortName">temp1[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/mem_data_in">
+      <obj_property name="ElementShortName">mem_data_in[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_data_in[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb_user_logic/dut/mem_data_out">
+      <obj_property name="ElementShortName">mem_data_out[31:0]</obj_property>
+      <obj_property name="ObjectShortName">mem_data_out[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject fp_name="divider137" type="divider">
+      <obj_property name="label">self_check</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/checks">
+      <obj_property name="ElementShortName">checks</obj_property>
+      <obj_property name="ObjectShortName">checks</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="other" fp_name="/tb_user_logic/errors">
+      <obj_property name="ElementShortName">errors</obj_property>
+      <obj_property name="ObjectShortName">errors</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+</wave_config>
