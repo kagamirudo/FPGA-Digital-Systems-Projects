@@ -1,0 +1,649 @@
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage[letterpaper,top=0.45in,bottom=0.5in,left=0.5in,right=0.5in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{amsmath}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+}
+
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{2pt}
+\captionsetup{skip=2pt,font=small}
+
+\graphicspath{{figures/}}
+
+% -----------------------------------------------------------------------------
+% Optional figures: if the screenshot has not yet been captured from
+% Vivado/Vitis, fall back to a labelled framed box so the rest of the
+% report still compiles cleanly.
+% -----------------------------------------------------------------------------
+\usepackage{tikz}
+\newcommand{\optionalfig}[3][\textwidth]{%
+    \IfFileExists{figures/#2}{%
+        \includegraphics[width=#1]{#2}%
+    }{%
+        \begin{tikzpicture}
+            \draw[dashed,thick] (0,0) rectangle (#1,4cm);
+            \node[align=center] at (0.5*#1,2cm) {%
+                \textit{placeholder:} \texttt{#2}\\[2pt]
+                {\footnotesize #3}%
+            };
+        \end{tikzpicture}%
+    }%
+}
+
+% -----------------------------------------------------------------------------
+% Code listing styles
+% -----------------------------------------------------------------------------
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codekw}{RGB}{0,0,180}
+\definecolor{codecmt}{RGB}{0,120,0}
+\definecolor{codestr}{RGB}{170,55,20}
+\definecolor{codenum}{RGB}{120,120,120}
+
+\lstset{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecmt}\itshape,
+    stringstyle=\color{codestr},
+    numbers=left,
+    numberstyle=\tiny\color{codenum},
+    stepnumber=1,
+    numbersep=5pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=4,
+    showstringspaces=false,
+    breaklines=true,
+    breakatwhitespace=false,
+    breakindent=0pt,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    captionpos=b,
+    aboveskip=4pt,
+    belowskip=4pt,
+    xleftmargin=6pt,
+    xrightmargin=2pt,
+    columns=fullflexible,
+    keepspaces=true,
+    morekeywords={u32,s32,Xil_Out32,Xil_In32}
+}
+
+\lstdefinelanguage{VHDLsmall}{
+    sensitive=false,
+    morekeywords={architecture,begin,case,component,downto,else,elsif,end,
+        entity,if,is,library,others,port,map,signal,std_logic,
+        std_logic_vector,then,to,use,when,work,all,generic,return,process,
+        rising_edge,unsigned,signed,std_logic_unsigned,numeric_std,
+        constant,variable,type,array,natural,integer,for,loop,while,resize},
+    morecomment=[l]--
+}
+
+\lstdefinestyle{vhdlstyle}{
+    language=VHDLsmall,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{codekw}\bfseries,
+    commentstyle=\color{codecmt}\itshape,
+    numbers=left,
+    numberstyle=\tiny\color{codenum},
+    numbersep=5pt,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{black!30},
+    tabsize=4,
+    breaklines=true,
+    captionpos=b,
+    aboveskip=4pt,
+    belowskip=4pt,
+    xleftmargin=6pt,
+    xrightmargin=2pt,
+    columns=fullflexible,
+    keepspaces=true
+}
+
+\title{\vspace{-0.6in}\textbf{ECEC 661 -- Final}\\
+       \large Stack Processor 101 with new \texttt{ssq} (``stack the square'') instruction}
+\author{Gary Pham \texttt{(gp492)}}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-0.25in}
+
+% =============================================================================
+\section{Problem Statement}
+% =============================================================================
+
+Starting from the assignment PDF's Stack Processor~101 (\texttt{sp101}),
+implement a new machine instruction \texttt{ssq} -- \emph{stack the
+square} -- which squares the value on top of the data stack in place.
+The user-visible calling convention is:
+\[
+\texttt{sc}\ x\quad\texttt{ssq}\quad\texttt{halt}
+\]
+For \(x=7\) the processor must leave \(49\) on the stack and the stack
+pointer must point to the next available address.  Because
+\texttt{idle} initialises \(\mathit{sp}=128\) and \texttt{sc 7} writes
+\(\mathrm{mem}[128]=7\) then bumps \(\mathit{sp}\) to~\(129\),
+\texttt{ssq} overwrites \(\mathrm{mem}[128]\) with \(7\cdot7=49\) and
+leaves \(\mathit{sp}=129\).  Deliverables, scored from
+\href{run:../prob.md}{\texttt{Final/real/prob.md}}:
+
+\begin{table}[H]
+    \centering
+    \small
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Part} & \textbf{Points} & \textbf{Artifact in this report} \\
+        \midrule
+        1. simulate correctness (sim wave)           & 10 & Figs.~\ref{fig:sim1}--\ref{fig:simres2} \\
+        2. custom IP user logic (component + port map) & 5 & Listing~\ref{lst:userlogic} \\
+        3.1 block diagram                            & 3 & Fig.~\ref{fig:bd} \\
+        3.2 C test app                               & 3 & Listing~\ref{lst:cmain} \\
+        3.3 serial terminal snip (\(\mathrm{addr}\,128=\mathrm{square}\)) & 4 & Fig.~\ref{fig:vitis} / Listing~\ref{lst:uart} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Architecture}
+% =============================================================================
+
+The IP keeps the assignment PDF's three-block layout
+(Figure~\ref{fig:bd}): an AXI4-Lite slave exposes the five
+software-visible registers, a \texttt{bus\_ip\_mem\_bridge} multiplexes
+the bus or the processor onto the single port of
+\texttt{blk\_mem\_gen\_0}, and the stack processor (\texttt{user\_logic})
+fetches/executes machine instructions out of that BRAM.  Only the
+\texttt{exe} decoder of \texttt{user\_logic} is extended with the new
+\texttt{ssq} opcode family; every other PDF instruction is unchanged.
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[0.92\textwidth]{diagram.png}{Vivado block design
+        (Zynq PS, AXI Interconnect, \texttt{sp101\_axi\_0}).}
+    \caption{Vivado block design: ZYNQ7 Processing System,
+             Processor System Reset, AXI Interconnect, and the custom
+             \texttt{sp101\_axi\_0} IP (\textit{Stack Processor 101 with
+             ssq, AXI4-Lite}).  \texttt{M\_AXI\_GP0} from the PS reaches
+             the IP through the interconnect; \texttt{FCLK\_CLK0}
+             (100~MHz) and \texttt{FCLK\_RESET0\_N} drive the reset
+             block.  The IP is mapped at base
+             \texttt{0x43C3\_0000} (\(4\,\text{KB}\)) in the Address
+             Editor.}
+    \label{fig:bd}
+\end{figure}
+
+% =============================================================================
+\section{Software Register Map}
+% =============================================================================
+
+The slave maps five 32-bit registers into a 32-byte aperture, identical
+to the PDF's reference C snippet:
+
+\begin{table}[H]
+    \centering
+    \caption{Software register map (byte offsets from
+             \texttt{XPAR\_SP101\_AXI\_0\_S00\_AXI\_BASEADDR}).}
+    \label{tab:regs}
+    \small
+    \begin{tabular}{clcp{8.0cm}}
+        \toprule
+        \textbf{Offset} & \textbf{Name} & \textbf{R/W} & \textbf{Purpose} \\
+        \midrule
+        \texttt{0x00} & \texttt{slv\_reg0} & R/W &
+            control: bit~0~=\texttt{run}, bit~1~=\texttt{reset},
+            bit~2~=\texttt{bus2mem\_en}, bit~3~=\texttt{bus2mem\_we} \\
+        \texttt{0x04} & \texttt{slv\_reg1} & R/W &
+            \texttt{bus2mem\_addr} (lower 10 bits) \\
+        \texttt{0x08} & \texttt{slv\_reg2} & R/W &
+            \texttt{bus2mem\_data\_in} (32 bit) \\
+        \texttt{0x0C} & \texttt{slv\_reg3} & R   &
+            \texttt{sp2bus\_data\_out} (32 bit) \\
+        \texttt{0x10} & \texttt{slv\_reg4} & R   &
+            bit~0 = \texttt{done} flag \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Instruction Set and \texttt{ssq} Opcode}
+% =============================================================================
+
+The processor honours every opcode from the assignment PDF and adds a
+new family for \texttt{ssq}.  The lowest hex digit of each constant is
+the micro-step index inside the instruction; the higher hex digits are
+the opcode group.
+
+\begin{table}[H]
+    \centering
+    \caption{Instruction set (opcode entry constants in
+             \href{run:../stackprocessor_101/rtl/user_logic.vhd}{\texttt{user\_logic.vhd}}).}
+    \label{tab:isa}
+    \small
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{Mnemonic} & \textbf{Code} & \textbf{Stack effect} & \textbf{Notes} \\
+        \midrule
+        \texttt{halt} & \texttt{0x000000FF} & --                                            & raise \texttt{done}, halt \\
+        \texttt{sc}   & \texttt{0x00000001} & push \(c\)                                    & push constant pointed by pc \\
+        \texttt{sl}   & \texttt{0x00000011} & pop \(a\), push \(\mathrm{mem}[a]\)           & indirect load \\
+        \texttt{ss}   & \texttt{0x00000021} & pop \(d\), pop \(a\), \(\mathrm{mem}[a]\!\leftarrow\!d\) & indirect store \\
+        \texttt{sadd} & \texttt{0x00000031} & pop, pop, push sum                            & stack add \\
+        \texttt{ssq}  & \texttt{0x00000041} & pop \(x\), push \(x\cdot x\)                  & \textbf{NEW} -- unary in place \\
+        \texttt{scp}  & \texttt{0x00000101} & pop \(s\), pop \(d\), \(\mathrm{mem}[d]\!\leftarrow\!\mathrm{mem}[s]\) & single-word copy \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The opcode \texttt{0x00000041} drops into the unused \texttt{0x4x}
+slot above \texttt{sadd}, so none of the existing decoders are touched.
+Because \texttt{ssq} is unary and reuses the same stack slot for input
+and output, the stack pointer is unchanged: one ``pop'' and one
+``push'' cancel.
+
+\subsection{\texttt{ssq} micro-program}
+
+The FSM walks \texttt{ssq} through six micro-states.  States
+\texttt{SSQ}--\texttt{SSQ4} schedule the BRAM read of
+\(\mathrm{mem}[\mathit{sp}-1]\) and burn the 4-cycle read latency
+(BRAM~+~\texttt{mem\_data\_out\_pre}~+~\texttt{mem\_data\_out}).  State
+\texttt{SSQ5} captures \(x\) in \texttt{temp1}; state \texttt{SSQ6}
+issues the write of \(x\cdot x\) back to the same address and returns
+to \texttt{fetch}.
+
+\begin{lstlisting}[style=vhdlstyle,caption={Core micro-states (excerpt
+of \texttt{when SSQ ...} body in
+\href{run:../stackprocessor_101/rtl/user_logic.vhd}{\texttt{user\_logic.vhd}}).},label={lst:ssq}]
+when SSQ =>                              -- start read of mem[sp-1]
+    mem_addr <= std_logic_vector(unsigned(sp) - 1);
+    we       <= "0"; ir <= SSQ2;
+when SSQ2 => we <= "0"; ir <= SSQ3;      -- BRAM read latency
+when SSQ3 => we <= "0"; ir <= SSQ4;      -- BRAM read latency
+when SSQ4 => we <= "0"; ir <= SSQ5;      -- BRAM read latency
+when SSQ5 =>                              -- x is now valid
+    temp1 <= mem_data_out;
+    we    <= "0"; ir <= SSQ6;
+when SSQ6 =>                              -- write x*x back to mem[sp-1]
+    mem_addr    <= std_logic_vector(unsigned(sp) - 1);
+    mem_data_in <= std_logic_vector(
+                       resize(unsigned(temp1) *
+                              unsigned(temp1), 32));
+    we          <= "1";
+    n_s         <= fetch;
+\end{lstlisting}
+
+Multiplication uses \texttt{numeric\_std} (\(\texttt{unsigned}\times
+\texttt{unsigned}\)) and \texttt{resize(\dots,32)} truncates the
+64-bit product to the low 32 bits.  All test vectors used here have
+\(x\le 46340\), so \(x\cdot x<2^{31}\) and no truncation occurs.
+
+% =============================================================================
+\section{Part 2 -- User Logic Instantiation (5 pts)}
+% =============================================================================
+
+\begin{sloppypar}
+The required component declaration and port map live inside the
+AXI4-Lite slave wrapper
+\href{run:../stackprocessor_101/rtl/sp101_axi_v1_0_S00_AXI.vhd}%
+{\texttt{sp101\_axi\_v1\_0\_S00\_AXI.vhd}}
+(lines \(\sim 101\)--\(151\)).
+Control bits are sliced straight from \texttt{slv\_reg0};
+\texttt{bus2mem\_addr} takes the lower 10 bits of \texttt{slv\_reg1};
+\texttt{bus2mem\_data\_in} is the full 32 bits of \texttt{slv\_reg2};
+\texttt{sp2bus\_data\_out} and \texttt{done} feed the read mux
+(\texttt{slv\_reg3} and \texttt{slv\_reg4}).
+\end{sloppypar}
+
+\begin{lstlisting}[style=vhdlstyle,caption={Component declaration and
+port map of the \texttt{user\_logic} core inside
+\texttt{sp101\_axi\_v1\_0\_S00\_AXI.vhd}.},label={lst:userlogic}]
+-- Component declaration
+component user_logic
+    generic (
+        A : natural := 10
+    );
+    port (
+        run             : in  std_logic;
+        reset           : in  std_logic;
+        bus2mem_en      : in  std_logic;
+        bus2mem_we      : in  std_logic;
+        ck              : in  std_logic;
+        bus2mem_addr    : in  std_logic_vector(A-1 downto 0);
+        bus2mem_data_in : in  std_logic_vector(31 downto 0);
+        sp2bus_data_out : out std_logic_vector(31 downto 0);
+        done            : out std_logic
+    );
+end component;
+
+-- Port map
+U : user_logic
+    generic map (
+        A => 10
+    )
+    port map (
+        run             => slv_reg0(0),
+        reset           => slv_reg0(1),
+        bus2mem_en      => slv_reg0(2),
+        bus2mem_we      => slv_reg0(3),
+        ck              => S_AXI_ACLK,
+        bus2mem_addr    => slv_reg1(9 downto 0),
+        bus2mem_data_in => slv_reg2,
+        sp2bus_data_out => core_sp2bus_data_out,
+        done            => core_done
+    );
+\end{lstlisting}
+
+% =============================================================================
+\section{Part 1 -- Behavioral Simulation (10 pts)}
+% =============================================================================
+
+\texttt{tb/tb\_user\_logic.vhd} drives the same \texttt{run},
+\texttt{reset}, \texttt{bus2mem\_*} signals the assignment's xsim
+script forces, looping over a single vector list
+\texttt{SSQ\_X\_VALUES} and asserting that \(\mathrm{mem}[128]\)
+holds \(x\cdot x\) after each run.  The vector list (Table~\ref{tab:vec})
+includes the prompt example \((x=7)\), three corner cases \(\{0,1,2\}\),
+small/medium positive values, and two large operands that stress the
+32-bit datapath.
+
+\begin{table}[H]
+    \centering
+    \caption{Test vectors driven by \texttt{tb\_user\_logic} (and by
+             the on-board C app).  All execute the program
+             \texttt{sc}~\(x\)~\texttt{ssq}~\texttt{halt} and verify
+             \(\mathrm{mem}[128]=x^{2}\).}
+    \label{tab:vec}
+    \small
+    \begin{tabular}{rrl}
+        \toprule
+        \(x\) & \(x^{2}\) & note \\
+        \midrule
+        \texttt{7}     & \texttt{49}         & prompt example \\
+        \texttt{0}     & \texttt{0}          & zero edge case \\
+        \texttt{1}     & \texttt{1}          & identity edge case \\
+        \texttt{2}     & \texttt{4}          & small \\
+        \texttt{3}     & \texttt{9}          & small \\
+        \texttt{10}    & \texttt{100}        & round decade \\
+        \texttt{15}    & \texttt{225}        & medium \\
+        \texttt{16}    & \texttt{256}        & power of two \\
+        \texttt{255}   & \texttt{65025}      & byte max \\
+        \texttt{1000}  & \texttt{1000000}    & round thousand \\
+        \texttt{32767} & \texttt{1073676289} & 15-bit max \\
+        \texttt{46340} & \texttt{2147395600} & near \(\sqrt{2^{31}}\) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The wave script
+\href{run:../stackprocessor_101/scripts/sim_waves.tcl}{\texttt{scripts/sim\_waves.tcl}}
+sets the data-path radices to \emph{unsigned} so the values read
+directly as decimal (much easier to confirm \(7 \to 49\) than
+\texttt{0x7}~\(\to\)~\texttt{0x31}).  Opcode signals like \texttt{ir}
+stay hex because they are encoded constants, not numbers.
+
+Figures~\ref{fig:sim1}--\ref{fig:sim3} show the full xsim run spanning
+all twelve scenarios; the integer \texttt{checks} counter climbs
+\(0\to 12\) while \texttt{errors} stays at~\(0\).  The
+\texttt{ssq\_datapath} group in Figure~\ref{fig:sim3} is the clearest
+proof of functional correctness: for every scenario the wave shows
+\texttt{temp1}~=~\(x\), \texttt{mem\_data\_in}~=~\(x^{2}\) on the
+\texttt{SSQ6} write edge, and \texttt{mem\_data\_out}~=~\(x^{2}\) on
+the post-run read-back through the bus.  Figures~\ref{fig:simres1} and
+\ref{fig:simres2} reproduce the Tcl-console transcript, listing the
+twelve \texttt{[PASS]} notes with both decimal and hex values and the
+\texttt{TESTBENCH PASSED} banner with \texttt{checks executed : 12,
+errors : 0}.
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[\textwidth]{sim1.png}{xsim wave with bus signals and
+        \texttt{checks} counter, scenarios 0--11.}
+    \caption{xsim waveform, overview.  Top group shows
+             \texttt{ck}, \texttt{run\_sig}, \texttt{reset\_sig},
+             \texttt{bus2mem\_en/we}; the bus group shows
+             \texttt{bus2mem\_addr}, \texttt{bus2mem\_data\_in} and
+             \texttt{sp2bus\_data\_out} in decimal.  The
+             \texttt{checks} integer (third pane from the top of the
+             middle group) walks \(0,1,\dots,11\) across the run; the
+             \texttt{errors} integer is constant at~\(0\).}
+    \label{fig:sim1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[\textwidth]{sim2.png}{xsim wave with processor
+        registers and \texttt{ssq} datapath, scenarios 0--11.}
+    \caption{xsim waveform, processor view.  \texttt{ir} (hex) walks
+             through \texttt{SC \(\to\) SC2 \(\to\) \(\ldots\) \(\to\)
+             SC5 \(\to\) SSQ \(\to\) SSQ2 \(\to\) \(\ldots\) \(\to\)
+             SSQ6 \(\to\) HALT} every scenario.  \texttt{sp} bounces
+             \(128\to 129\) once per scenario (\texttt{sc} bumps it,
+             \texttt{ssq} leaves it).  \texttt{temp1} (decimal) holds
+             the operand \(x\) and \texttt{mem\_data\_in} (decimal)
+             carries \(x^{2}\) into the BRAM on the \texttt{SSQ6}
+             write edge.}
+    \label{fig:sim2}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[0.95\textwidth]{sim3.png}{Zoom on the
+        \texttt{ssq\_datapath} and \texttt{self\_check} groups.}
+    \caption{\texttt{ssq\_datapath} zoom (decimal radix).  Reading
+             left to right the testbench drives \(x=0,7,1,2,3,10,15,
+             16,255,1000,32767,46340\); each \texttt{temp1} sample is
+             followed one cycle later by the matching
+             \texttt{mem\_data\_in}~=~\(x^{2}\) and (after the
+             read-back) \texttt{mem\_data\_out}~=~\(x^{2}\).  The
+             \texttt{checks} counter climbs \(0\to 12\) and
+             \texttt{errors} stays \(0\), proving every vector
+             matches.}
+    \label{fig:sim3}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[\textwidth]{sim_res1.png}{xsim Tcl console:
+        per-scenario \texttt{[PASS]} notes.}
+    \caption{xsim Tcl console output for all twelve scenarios.  Every
+             vector reports
+             \texttt{[PASS] ssq x=\(X\) -> \(X^{2}\) addr=128
+             got=\(X^{2}\) expected=\(X^{2}\) (0x\dots)}.}
+    \label{fig:simres1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[0.9\textwidth]{sim_res2.png}{xsim Tcl console:
+        final summary banner.}
+    \caption{Final \texttt{tb\_user\_logic} banner.
+             \texttt{checks executed : 12}, \texttt{errors : 0},
+             \texttt{TESTBENCH PASSED -- all cases ok}.}
+    \label{fig:simres2}
+\end{figure}
+
+% =============================================================================
+\section{Part 3.2 -- Bare-metal C Application (3 pts)}
+% =============================================================================
+
+The bare-metal application
+\href{run:../stackprocessor_101/sw/main.c}{\texttt{sw/main.c}} drives
+the AXI4-Lite peripheral through the exact handshake described in the
+PDF and runs the same twelve vectors as the simulator (so the on-board
+UART log matches the simulator output line-for-line).  The key driver
+helpers are reproduced in Listing~\ref{lst:cmain}; note the
+``never assert \texttt{CTRL\_RESET} during \texttt{mem\_read}'' rule,
+which is the failure mode that silently masked the dump in early
+bring-up.
+
+\begin{lstlisting}[caption={Core of \texttt{main.c}: bus write, bus
+read, processor reset, and the per-scenario flow that proves
+\(\mathrm{addr}\,128 = x^{2}\).},label={lst:cmain}]
+/* slv_reg0 control bits */
+#define CTRL_RUN        (1U << 0)
+#define CTRL_RESET      (1U << 1)
+#define CTRL_BUS_EN     (1U << 2)
+#define CTRL_BUS_WE     (1U << 3)
+
+/* IMPORTANT: never assert CTRL_RESET while reading.  Pulse reset only
+ * in processor_reset(); use plain CTRL_BUS_EN (+CTRL_BUS_WE for
+ * writes) for normal bus access. */
+static void mem_write(u32 addr, u32 data)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL,     CTRL_BUS_EN | CTRL_BUS_WE);
+    SP101_mWriteReg(BASEADDR, REG_BUS_ADDR, addr & 0x3FFU);
+    SP101_mWriteReg(BASEADDR, REG_BUS_DIN,  data);
+}
+
+static u32 mem_read(u32 addr)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL,     CTRL_BUS_EN);
+    SP101_mWriteReg(BASEADDR, REG_BUS_ADDR, addr & 0x3FFU);
+    for (volatile int s = 0; s < 64; s++) { }
+    return SP101_mReadReg(BASEADDR, REG_SP_DOUT);
+}
+
+static void processor_reset(void)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL, CTRL_RESET | CTRL_BUS_EN);
+    for (volatile int s = 0; s < 64; s++) { }
+    SP101_mWriteReg(BASEADDR, REG_CTRL, CTRL_BUS_EN);
+}
+
+static void processor_run_and_wait(void)
+{
+    SP101_mWriteReg(BASEADDR, REG_CTRL, CTRL_RUN);
+    while ((SP101_mReadReg(BASEADDR, REG_DONE) & 0x1U) == 0U) { }
+    SP101_mWriteReg(BASEADDR, REG_CTRL, 0U);
+}
+
+/* Load `sc x  ssq  halt` at memory[0..3]. */
+static void load_ssq_program(u32 x)
+{
+    const u32 prog[4] = { OP_SC, x, OP_SSQ, OP_HALT };
+    for (u32 i = 0; i < 4U; i++) {
+        mem_write(i, prog[i]);
+    }
+}
+
+/* Per-scenario: reset -> poison mem[128] -> load program -> run ->
+ * read mem[128] -> compare against x*x. */
+static unsigned run_ssq_scenario(u32 x_in)
+{
+    const u32 expected = x_in * x_in;
+    const u32 sentinel = 0xDEADBEEFU;
+
+    processor_reset();
+    mem_write(STACK_BASE, sentinel);   /* would survive a no-op bug */
+    load_ssq_program(x_in);
+    processor_run_and_wait();
+
+    u32 got = mem_read(STACK_BASE);
+    /* xil_printf("address 128 = %u  (expected %u = %u^2)  %s",
+     *            got, expected, x_in, (got==expected)?"PASS":"FAIL"); */
+    return (got == expected) ? 0U : 1U;
+}
+\end{lstlisting}
+
+% =============================================================================
+\section{Part 3.3 -- Hardware Results (UART, 4 pts)}
+% =============================================================================
+
+The same twelve scenarios were re-executed on the Cora~Z7-07S over the
+AXI4-Lite interface (base \texttt{0x43C3\_0000}).  The UART transcript
+(Figure~\ref{fig:vitis}, captured at \(115\,200\) Bd through
+\texttt{ps7\_uart\_0}) reports every read-back of \(\mathrm{mem}[128]\)
+as \texttt{PASS} -- decimal first, hex on the next line -- and ends
+with \texttt{Summary : 12/12 scenarios PASSED}, matching the simulation
+result line-for-line.  Listing~\ref{lst:uart} reproduces the captured
+trace verbatim so the prompt's
+``\(\mathrm{address}\,128\) contains the square'' requirement is
+visible in text as well as in the screenshot.
+
+\begin{figure}[H]
+    \centering
+    \optionalfig[0.45\textwidth]{vitis.png}{Serial-monitor capture of
+        the twelve \texttt{ssq} scenarios on Cora~Z7-07S.}
+    \caption{UART trace from the bare-metal \texttt{sp101 + ssq} test
+             app on the Cora~Z7-07S.  Every scenario shows
+             \texttt{address 128 = \(x^{2}\)} (decimal) and matching
+             hex on the next line; the summary line at the bottom
+             reads \texttt{Summary : 12/12 scenarios PASSED}.  Note
+             the prompt case at the top: \texttt{address 128 = 49
+             (expected 49 = 7\textasciicircum{}2) PASS}.}
+    \label{fig:vitis}
+\end{figure}
+
+\begin{lstlisting}[language={},caption={Captured UART trace (verbatim
+from the Cora~Z7-07S run; abbreviated -- full text in
+Fig.~\ref{fig:vitis}).},label={lst:uart}]
+==========================================================
+   ECEC 661 FINAL - Stack Processor 101 + ssq
+   IP base address : 0x43C30000
+==========================================================
+
+---- Scenario: ssq x=7 -> 49 ----
+  program : sc 7  ssq  halt
+    address 128 = 49  (expected 49 = 7^2)  PASS
+                  hex: got=0x00000031  expect=0x00000031
+
+---- Scenario: ssq x=0 -> 0 ----     ...   PASS
+---- Scenario: ssq x=1 -> 1 ----     ...   PASS
+---- Scenario: ssq x=2 -> 4 ----     ...   PASS
+---- Scenario: ssq x=3 -> 9 ----     ...   PASS
+---- Scenario: ssq x=10 -> 100 ----  ...   PASS
+---- Scenario: ssq x=15 -> 225 ----  ...   PASS
+---- Scenario: ssq x=16 -> 256 ----  ...   PASS
+---- Scenario: ssq x=255 -> 65025 ----            ...   PASS
+---- Scenario: ssq x=1000 -> 1000000 ----         ...   PASS
+---- Scenario: ssq x=32767 -> 1073676289 ----     ...   PASS
+
+---- Scenario: ssq x=46340 -> 2147395600 ----
+  program : sc 46340  ssq  halt
+    address 128 = 2147395600  (expected 2147395600 = 46340^2)  PASS
+                  hex: got=0x7FFEA810  expect=0x7FFEA810
+
+----------------------------------------------------------
+   Summary : 12/12 scenarios PASSED
+----------------------------------------------------------
+\end{lstlisting}
+
+% =============================================================================
+\section{Conclusion}
+% =============================================================================
+
+The Final design adds a 6-state \texttt{ssq} micro-program
+(Listing~\ref{lst:ssq}, opcode \texttt{0x00000041}) to the assignment
+PDF's Stack Processor~101, packages the result as the AXI4-Lite IP
+\texttt{sp101\_axi} (Listing~\ref{lst:userlogic} for the component
+declaration and port map required by Part~2), and exercises twelve
+vectors in both behavioural simulation
+(Figures~\ref{fig:sim1}--\ref{fig:simres2}: \texttt{checks=12,
+errors=0}) and on the Cora~Z7-07S
+(Figure~\ref{fig:vitis} / Listing~\ref{lst:uart}:
+\texttt{12/12 scenarios PASSED}).  For the prompt example
+\texttt{sc 7 ssq halt}, \(\mathrm{mem}[128]=49\) on both simulation and
+hardware and \(\mathit{sp}=129\) points at the next available address,
+which is the exact behaviour required by
+\href{run:../prob.md}{\texttt{Final/real/prob.md}}.  Each scored
+deliverable maps to a concrete artifact under
+\href{run:../stackprocessor_101/}{\texttt{Final/real/stackprocessor\_101/}}
+and is reproduced step-by-step in
+\href{run:../README.md}{\texttt{Final/real/README.md}}.
+
+\end{document}

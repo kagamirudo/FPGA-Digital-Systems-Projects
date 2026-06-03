@@ -76,3 +76,8 @@
 Thumbs.db
 *.swp
 *~
+
+#latex generated files
+*.aux
+*.log
+*.out
